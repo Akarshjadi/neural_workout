@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:fsrs/fsrs.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_gemma/core/model.dart';
@@ -47,46 +49,58 @@ class AppState extends ChangeNotifier {
 
   /// User-grown synonym/alias table (issue 10): kebab concept -> alternatives.
   /// Loaded from the settings box at startup; grown via [addSynonymAlias].
-  /// Seeded with a tiny default set; passed through to the BlurtScorer.
-  Map<String, List<String>> synonymAliases = {
-    'gateway': ['bridge'],
-    'encryption': ['ciphering'],
-  };
+  /// Persisted as JSON: {"concept": ["alt1", "alt2"], ...}.
+  Map<String, List<String>> synonymAliases = {};
 
-  /// Persisted user aliases (survive restarts). Format: "concept=alt1,alt2" per key.
+  /// Persisted user aliases (survive restarts). JSON map form.
   void _loadSynonymAliases() {
     final raw = db.getSetting('synonym_aliases');
     if (raw == null || raw.isEmpty) return;
-    for (final entry in raw.split(';')) {
-      final parts = entry.split('=');
-      if (parts.length != 2) continue;
-      final concept = parts[0].trim();
-      final alts = parts[1]
-          .split(',')
-          .map((s) => s.trim())
-          .where((s) => s.isNotEmpty)
-          .toList();
-      if (concept.isNotEmpty && alts.isNotEmpty) {
-        final existing = synonymAliases[concept] ?? const [];
-        synonymAliases[concept] = {...existing, ...alts}.toList();
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map) {
+        for (final entry in decoded.entries) {
+          final concept = entry.key.toString();
+          final alts = (entry.value as List).map((e) => e.toString()).toList();
+          if (concept.isNotEmpty && alts.isNotEmpty) {
+            synonymAliases[concept] = alts;
+          }
+        }
       }
+    } catch (e) {
+      debugPrint('_loadSynonymAliases: corrupt alias setting: $e');
     }
   }
 
   /// Add a user-taught alias for a concept and persist it.
   Future<void> addSynonymAlias(String concept, String alias) async {
     final c = concept.trim().toLowerCase();
-    final a = alias.trim().toLowerCase();
+    final a = alias.trim();
     if (c.isEmpty || a.isEmpty) return;
     final current = [...(synonymAliases[c] ?? const <String>[])];
     if (current.contains(a)) return;
     synonymAliases[c] = [...current, a];
-    // Persist: merge existing setting with the new alias.
-    final raw = db.getSetting('synonym_aliases') ?? '';
-    final buffer = StringBuffer(raw.isEmpty ? '' : '$raw;');
-    buffer.write('$c=$a');
-    db.setSetting('synonym_aliases', buffer.toString());
+    _persistAliases();
     notifyListeners();
+  }
+
+  /// Remove a user-taught alias for a concept and persist the change.
+  Future<void> removeSynonymAlias(String concept, String alias) async {
+    final c = concept.trim().toLowerCase();
+    final a = alias.trim();
+    if (c.isEmpty || a.isEmpty) return;
+    final current = [...(synonymAliases[c] ?? const <String>[])];
+    if (!current.contains(a)) return;
+    synonymAliases[c] = current.where((e) => e != a).toList();
+    if (synonymAliases[c]!.isEmpty) {
+      synonymAliases.remove(c);
+    }
+    _persistAliases();
+    notifyListeners();
+  }
+
+  void _persistAliases() {
+    db.setSetting('synonym_aliases', jsonEncode(synonymAliases));
   }
 
   // Loaded collections (refreshed on load / after mutations).
@@ -236,27 +250,6 @@ class AppState extends ChangeNotifier {
     final sorted = List<BlurtScore>.from(blurtScores);
     sorted.sort((a, b) => b.date.compareTo(a.date));
     return sorted;
-  }
-
-  /// Remove a user-taught alias for a concept and persist the change.
-  Future<void> removeSynonymAlias(String concept, String alias) async {
-    final c = concept.trim().toLowerCase();
-    final a = alias.trim().toLowerCase();
-    if (c.isEmpty || a.isEmpty) return;
-    final current = [...(synonymAliases[c] ?? const <String>[])];
-    if (!current.contains(a)) return;
-    synonymAliases[c] = current.where((e) => e != a).toList();
-    if (synonymAliases[c]!.isEmpty) {
-      synonymAliases.remove(c);
-    }
-    // Rebuild the persisted setting from the in-memory map.
-    final buffer = StringBuffer();
-    for (final entry in synonymAliases.entries) {
-      if (buffer.isNotEmpty) buffer.write(';');
-      buffer.write('${entry.key}=${entry.value.join(',')}');
-    }
-    db.setSetting('synonym_aliases', buffer.toString());
-    notifyListeners();
   }
 
   /// Phase 7 — Update AI model config and reinitialize.
