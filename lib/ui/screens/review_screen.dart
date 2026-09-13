@@ -16,31 +16,13 @@ class ReviewScreen extends StatefulWidget {
 }
 
 class _ReviewScreenState extends State<ReviewScreen> {
-  Note? _current;
   bool _showAnswer = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _syncState();
-  }
-
-  void _syncState() {
-    final state = context.read<AppState>();
-    final due = state.dueNotesList;
-    if (_current != null && !due.any((n) => n.id == _current!.id)) {
-      _current = null;
-      _showAnswer = false;
-    }
-    if (_current == null && due.isNotEmpty) {
-      _current = due.first;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<AppState>();
     final due = state.dueNotesList;
+    final current = due.isEmpty ? null : due.first;
 
     return SafeArea(
       child: Column(
@@ -62,7 +44,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
             ),
           ),
           Expanded(
-            child: _current == null
+            child: current == null
                 ? const Center(
                     child: Padding(
                       padding: EdgeInsets.all(32),
@@ -72,7 +54,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
                               TextStyle(color: AppTheme.textDim, height: 1.5)),
                     ),
                   )
-                : _cardView(context, state, _current!, due),
+                : _cardView(context, state, current, due),
           ),
         ],
       ),
@@ -146,8 +128,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
         onPressed: () async {
           await state.reviewNote(card, rating, interleaved: true);
           if (context.mounted) {
+            // Reset showAnswer so the next card (if any) starts hidden.
+            // The build() method will pick up the next due card automatically.
             setState(() {
-              _current = null;
               _showAnswer = false;
             });
           }
