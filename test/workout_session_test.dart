@@ -76,5 +76,28 @@ void main() {
       expect(w.linkText, '');
       expect(w.teachingText, '');
     });
+
+    test('fromJson with stepsCompleted as string returns null (TypeError guard)', () {
+      // A corrupted blob with stepsCompleted="three" would throw TypeError under `on Exception`.
+      final json = '{"v":1,"start":"2026-09-09T09:00:00.000","stepsCompleted":"three","anchorTitle":"x"}';
+      expect(WorkoutSessionState.fromJson(json), isNull);
+    });
+
+    test('fromJson with start as non-string returns null (CastError guard)', () {
+      // A corrupted blob with numeric start would throw CastError under `on Exception`.
+      final json = '{"v":1,"start":12345,"stepsCompleted":0,"anchorTitle":"x"}';
+      expect(WorkoutSessionState.fromJson(json), isNull);
+    });
+
+    test('fromJson with missing anchorTitle returns null', () {
+      // anchorTitle is required — missing must yield null, not crash.
+      final json = '{"v":1,"start":"2026-09-09T09:00:00.000","stepsCompleted":0}';
+      expect(WorkoutSessionState.fromJson(json), isNull);
+    });
+
+    test('fromJson with anchorTitle null returns null', () {
+      final json = '{"v":1,"start":"2026-09-09T09:00:00.000","stepsCompleted":0,"anchorTitle":null}';
+      expect(WorkoutSessionState.fromJson(json), isNull);
+    });
   });
 }

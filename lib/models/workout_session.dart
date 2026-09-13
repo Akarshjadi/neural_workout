@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 
 /// Live state of an in-progress workout wizard, decoupled from the persisted
 /// [Session] record used by analytics.
@@ -135,7 +136,10 @@ class WorkoutSessionState {
             .map((e) => e as String)
             .toList(),
       );
-    } on Exception {
+    } catch (e, st) {
+      // Catch ALL errors (TypeError, CastError, FormatException, etc.) — a
+      // malformed autosave blob must never crash cold boot. Log for debugging.
+      debugPrint('WorkoutSessionState.fromJson: malformed blob: $e\n$st');
       return null;
     }
   }
