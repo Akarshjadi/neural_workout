@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:neural_workout/models/thought.dart';
+import 'package:neural_workout/data/serialization/export_dto.dart';
 
 /// Phase 3 — CSV export format tests.
 void main() {
@@ -20,10 +21,10 @@ void main() {
         tags: ['idea', 'review'],
         linkedNoteId: 42,
       );
-      final map = thought.toMap();
+      final map = thoughtToJson(thought);
       expect(map['id'], 1);
       expect(map['text'], 'Test thought');
-      expect(map['tags'], 'idea,review');
+      expect(map['tags'], ['idea', 'review']);
       expect(map['linked_note_id'], 42);
     });
 
@@ -33,7 +34,7 @@ void main() {
         text: 'Orphan thought',
         createdAt: DateTime.now(),
       );
-      final map = thought.toMap();
+      final map = thoughtToJson(thought);
       expect(map['linked_note_id'], isNull);
     });
   });

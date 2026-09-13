@@ -24,24 +24,6 @@ class Session {
     this.autosaveJson,
   });
 
-  Map<String, dynamic> toMap() => {
-        'v': 1,
-        'id': id,
-        'date': date.toIso8601String(),
-        'duration_ms': duration.inMilliseconds,
-        'steps_completed': stepsCompleted,
-        'anchor_note_id': anchorNoteId,
-        'anchor_title': anchorTitle,
-        'autosave_json': autosaveJson,
-      };
-
-  factory Session.fromMap(Map<String, dynamic> m) => Session(
-        id: m['id'] as int,
-        date: DateTime.parse(m['date'] as String),
-        duration: Duration(milliseconds: m['duration_ms'] as int),
-        stepsCompleted: m['steps_completed'] as int,
-        anchorNoteId: m['anchor_note_id'] as int?,
-        anchorTitle: m['anchor_title'] as String?,
-        autosaveJson: m['autosave_json'] as String?,
-      );
+  /// Persistence: see HiveSessionAdapter in app_database.g.dart.
+  /// Export: see data/serialization/export_dto.dart.
 }

@@ -24,26 +24,6 @@ class PathwayRecord {
     required this.graceUsed,
   });
 
-  Map<String, dynamic> toMap() => {
-        'v': 1,
-        'id': id,
-        'date': date.toIso8601String(),
-        'retrieval': retrieval ? 1 : 0,
-        'compression': compression ? 1 : 0,
-        'association': association ? 1 : 0,
-        'explanation': explanation ? 1 : 0,
-        'context': context ? 1 : 0,
-        'grace_used': graceUsed ? 1 : 0,
-      };
-
-  factory PathwayRecord.fromMap(Map<String, dynamic> m) => PathwayRecord(
-        id: m['id'] as int,
-        date: DateTime.parse(m['date'] as String),
-        retrieval: (m['retrieval'] as int) == 1,
-        compression: (m['compression'] as int) == 1,
-        association: (m['association'] as int) == 1,
-        explanation: (m['explanation'] as int) == 1,
-        context: (m['context'] as int) == 1,
-        graceUsed: (m['grace_used'] as int) == 1,
-      );
+  /// Persistence: see HivePathwayRecordAdapter in app_database.g.dart.
+  /// Export: see data/serialization/export_dto.dart.
 }

@@ -14,11 +14,6 @@ class Thought {
     this.linkedNoteId,
   });
 
-  Map<String, dynamic> toMap() => {
-        'id': id,
-        'text': text,
-        'created_at': createdAt.toIso8601String(),
-        'tags': tags.join(','),
-        'linked_note_id': linkedNoteId,
-      };
+  /// Persistence: see HiveThoughtAdapter in app_database.g.dart.
+  /// Export: see data/serialization/export_dto.dart.
 }

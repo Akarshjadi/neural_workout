@@ -8,6 +8,7 @@ import '../models/blurt_score.dart';
 import '../models/note.dart';
 import '../models/session.dart';
 import '../models/pathway_record.dart';
+import '../data/serialization/export_dto.dart';
 
 /// Phase 3 — Export service for CSV and JSON backup exports.
 class ExportService {
@@ -115,11 +116,11 @@ class ExportService {
   }) async {
     final backup = {
       'schemaVersion': schemaVersion,
-      'notes': notes.map((n) => n.toMap()).toList(),
-      'sessions': sessions.map((s) => s.toMap()).toList(),
-      'blurtScores': blurtScores.map((b) => b.toMap()).toList(),
-      'pathways': pathways.map((p) => p.toMap()).toList(),
-      'thoughts': thoughts.map((t) => t.toMap()).toList(),
+      'notes': notes.map(noteToJson).toList(),
+      'sessions': sessions.map(sessionToJson).toList(),
+      'blurtScores': blurtScores.map(blurtScoreToJson).toList(),
+      'pathways': pathways.map(pathwayRecordToJson).toList(),
+      'thoughts': thoughts.map(thoughtToJson).toList(),
     };
     final dir = await getApplicationDocumentsDirectory();
     final timestamp = DateTime.now().toIso8601String().replaceAll(':', '-');

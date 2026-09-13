@@ -575,7 +575,8 @@ class AppDatabase {
     if (s.trim().isEmpty) return <String, dynamic>{};
     try {
       return (jsonDecode(s) as Map).cast<String, dynamic>();
-    } on Exception {
+    } catch (e) {
+      debugPrint('_dC: corrupt cardState JSON: $e');
       return <String, dynamic>{};
     }
   }

@@ -47,26 +47,6 @@ class Note {
     );
   }
 
-  /// Laziest serialization that still round-trips for a personal app.
-  /// The FSRS `Card` knows how to serialize itself via toMap/fromMap.
-  Map<String, dynamic> toMap() => {
-        'v': 1,
-        'id': id,
-        'title': title,
-        'body': body,
-        'kind': kind.name,
-        'created_at': createdAt.toIso8601String(),
-        'updated_at': updatedAt.toIso8601String(),
-        'card': card.toMap(),
-      };
-
-  factory Note.fromMap(Map<String, dynamic> m) => Note(
-        id: m['id'] as int,
-        title: m['title'] as String,
-        body: m['body'] as String,
-        kind: NoteKind.values.byName(m['kind'] as String),
-        createdAt: DateTime.parse(m['created_at'] as String),
-        updatedAt: DateTime.parse(m['updated_at'] as String),
-        card: Card.fromMap((m['card'] as Map).cast<String, dynamic>()),
-      );
+  /// Persistence: see HiveNoteAdapter in app_database.g.dart.
+  /// Export: see data/serialization/export_dto.dart.
 }
