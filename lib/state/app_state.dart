@@ -23,7 +23,7 @@ import '../services/suggestion_service.dart';
 class AppState extends ChangeNotifier {
   final AppDatabase db;
   final FsrsEngine fsrs = FsrsEngine();
-  PathwayService pathways = const PathwayService();
+  PathwayService pathways = PathwayService();
   final StreakService streakSvc = StreakService();
   final LocalAiScorer _aiScorer = LocalAiScorer();
   final MetricsService metricsSvc = MetricsService();
@@ -207,6 +207,55 @@ class AppState extends ChangeNotifier {
   Future<void> setAiEnabled(bool v) async {
     aiEnabled = v;
     db.setSetting('ai_enabled', '$v');
+    notifyListeners();
+  }
+
+  /// Phase 6 — Deferred initialization of AI scorer and notifications off the startup path.
+  void initDeferredServices() {
+    _initAiScorer().catchError((e, st) {
+      debugPrint('initDeferredServices: AI init failed: $e\n$st');
+    });
+    notificationSvc.init().then((_) {
+      if (dueNotesList.isNotEmpty) {
+        notificationSvc.scheduleForDueCards(dueNotesList);
+      }
+    }).catchError((e, st) {
+      debugPrint('initDeferredServices: notification init failed: $e\n$st');
+    });
+  }
+
+  /// Review history sorted by date descending (for analytics screen).
+  List<Map<String, dynamic>> get sortedReviewHistory {
+    final rows = db.reviewHistory();
+    rows.sort((a, b) => ((b['date'] as String?) ?? '').compareTo((a['date'] as String?) ?? ''));
+    return rows;
+  }
+
+  /// Recent blurts sorted by date descending (for analytics screen).
+  List<BlurtScore> get sortedRecentBlurts {
+    final sorted = List<BlurtScore>.from(blurtScores);
+    sorted.sort((a, b) => b.date.compareTo(a.date));
+    return sorted;
+  }
+
+  /// Remove a user-taught alias for a concept and persist the change.
+  Future<void> removeSynonymAlias(String concept, String alias) async {
+    final c = concept.trim().toLowerCase();
+    final a = alias.trim().toLowerCase();
+    if (c.isEmpty || a.isEmpty) return;
+    final current = [...(synonymAliases[c] ?? const <String>[])];
+    if (!current.contains(a)) return;
+    synonymAliases[c] = current.where((e) => e != a).toList();
+    if (synonymAliases[c]!.isEmpty) {
+      synonymAliases.remove(c);
+    }
+    // Rebuild the persisted setting from the in-memory map.
+    final buffer = StringBuffer();
+    for (final entry in synonymAliases.entries) {
+      if (buffer.isNotEmpty) buffer.write(';');
+      buffer.write('${entry.key}=${entry.value.join(',')}');
+    }
+    db.setSetting('synonym_aliases', buffer.toString());
     notifyListeners();
   }
 
@@ -872,7 +921,6 @@ class AppState extends ChangeNotifier {
       blurt: blurt,
       allScores: blurtScores,
       sessions: sessions,
-      anchorNote: anchor,
       linkCountForNote: db.linkCountForNote(blurt.noteId),
       totalNotes: notes.length,
     );
