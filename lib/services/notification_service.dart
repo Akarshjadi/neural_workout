@@ -45,14 +45,15 @@ class NotificationService {
   }
 
   /// Schedule a daily notification at [hour]:[minute] local time.
-  Future<void> scheduleDaily({
+  /// Returns true if the notification was scheduled successfully, false otherwise.
+  Future<bool> scheduleDaily({
     required int hour,
     required int minute,
     required String title,
     required String body,
     required int id,
   }) async {
-    if (!_ready) return;
+    if (!_ready) return false;
     try {
       final now = tz.TZDateTime.now(tz.local);
       var scheduled = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
@@ -76,14 +77,17 @@ class NotificationService {
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
         matchDateTimeComponents: DateTimeComponents.time,
       );
+      return true;
     } catch (e, stackTrace) {
       debugPrint('NotificationService: scheduleDaily failed: $e\n$stackTrace');
+      return false;
     }
   }
 
   /// Schedule a notification at the earliest due time from due cards.
-  Future<void> scheduleForDueCards(List<Note> dueNotes) async {
-    if (!_ready || dueNotes.isEmpty) return;
+  /// Returns true if the notification was scheduled successfully, false otherwise.
+  Future<bool> scheduleForDueCards(List<Note> dueNotes) async {
+    if (!_ready || dueNotes.isEmpty) return false;
     try {
       final earliest = dueNotes
           .map((n) => n.card.due)
@@ -108,8 +112,10 @@ class NotificationService {
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
       );
+      return true;
     } catch (e, stackTrace) {
       debugPrint('NotificationService: scheduleForDueCards failed: $e\n$stackTrace');
+      return false;
     }
   }
 

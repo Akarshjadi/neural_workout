@@ -185,7 +185,7 @@ class TodayScreen extends StatelessWidget {
   }) async {
     final state = ctx.read<AppState>();
     final messenger = ScaffoldMessenger.of(ctx);
-    await state.notificationSvc.scheduleDaily(
+    final ok = await state.notificationSvc.scheduleDaily(
       hour: hour,
       minute: minute,
       title: title,
@@ -193,7 +193,12 @@ class TodayScreen extends StatelessWidget {
       id: id,
     );
     messenger.showSnackBar(
-      SnackBar(content: Text('Daily $title reminder set for ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}')),
+      SnackBar(
+        content: Text(ok
+            ? 'Daily $title reminder set for ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}'
+            : 'Could not set $title reminder — notifications not available'),
+        backgroundColor: ok ? null : AppTheme.danger,
+      ),
     );
   }
   /// Phase 6 — Suggestions card at top of Today screen.
