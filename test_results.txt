@@ -1,0 +1,329 @@
+00:00 +0: loading /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/import_service_test.dart
+00:00 +0: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/import_service_test.dart: single heading returns one section
+00:00 +1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/import_service_test.dart: multiple ## and ### headings split correctly
+00:00 +2: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/import_service_test.dart: no headings returns empty list
+00:00 +3: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/import_service_test.dart: mixed content with code blocks and lists
+00:00 +4: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/import_service_test.dart: bodies with leading/trailing whitespace are trimmed
+00:00 +5: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/import_service_test.dart: handles content before first heading
+00:00 +6: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/import_service_test.dart: empty string returns empty list
+00:00 +7: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/import_service_test.dart: only whitespace returns empty list
+00:00 +8: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/workout_session_test.dart: WorkoutSessionState autosave round-trips progress and per-step content
+00:00 +9: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/workout_session_test.dart: WorkoutSessionState content containing JSON-hostile characters survives
+00:00 +10: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/workout_session_test.dart: WorkoutSessionState completed session flags and elapsed math
+00:00 +11: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/workout_session_test.dart: WorkoutSessionState malformed / missing JSON yields null (safe resume fallback)
+WorkoutSessionState.fromJson: malformed blob: FormatException: Unexpected character (at character 1)
+not json
+^
+
+#0      _ChunkedJsonParser.fail (dart:convert-patch/convert_patch.dart:1467:5)
+#1      _ChunkedJsonParser.parseNull (dart:convert-patch/convert_patch.dart:994:7)
+#2      _ChunkedJsonParser.parse (dart:convert-patch/convert_patch.dart:877:22)
+#3      _parseJson (dart:convert-patch/convert_patch.dart:35:10)
+#4      JsonDecoder.convert (dart:convert/json.dart:640:36)
+#5      JsonCodec.decode (dart:convert/json.dart:219:41)
+#6      jsonDecode (dart:convert/json.dart:160:12)
+#7      WorkoutSessionState.fromJson (package:neural_workout/models/workout_session.dart:117:17)
+#8      main.<anonymous closure>.<anonymous closure> (file:///Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/workout_session_test.dart:59:34)
+#9      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#10     Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#11     Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+
+00:00 +12: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/workout_session_test.dart: WorkoutSessionState unknown schema version returns null (version check)
+00:00 +13: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/workout_session_test.dart: WorkoutSessionState empty content is independent per field (no cross-step leakage)
+00:00 +14: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/workout_session_test.dart: WorkoutSessionState fromJson with stepsCompleted as string returns null (TypeError guard)
+WorkoutSessionState.fromJson: malformed blob: type 'String' is not a subtype of type 'num' in type cast
+#0      WorkoutSessionState.fromJson (package:neural_workout/models/workout_session.dart:124:46)
+#1      main.<anonymous closure>.<anonymous closure> (file:///Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/workout_session_test.dart:83:34)
+#2      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#3      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#4      Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+
+00:00 +15: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/workout_session_test.dart: WorkoutSessionState fromJson with start as non-string returns null (CastError guard)
+WorkoutSessionState.fromJson: malformed blob: type 'int' is not a subtype of type 'String' in type cast
+#0      WorkoutSessionState.fromJson (package:neural_workout/models/workout_session.dart:123:42)
+#1      main.<anonymous closure>.<anonymous closure> (file:///Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/workout_session_test.dart:89:34)
+#2      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#3      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#4      Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+
+00:00 +16: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/workout_session_test.dart: WorkoutSessionState fromJson with missing anchorTitle returns null
+00:00 +17: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/workout_session_test.dart: WorkoutSessionState fromJson with anchorTitle null returns null
+WorkoutSessionState.fromJson: malformed blob: type 'Null' is not a subtype of type 'String' in type cast
+#0      WorkoutSessionState.fromJson (package:neural_workout/models/workout_session.dart:126:39)
+#1      main.<anonymous closure>.<anonymous closure> (file:///Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/workout_session_test.dart:100:34)
+#2      Declarer.test.<anonymous closure>.<anonymous closure> (package:test_api/src/backend/declarer.dart:253:25)
+<asynchronous suspension>
+#3      Declarer.test.<anonymous closure> (package:test_api/src/backend/declarer.dart:250:11)
+<asynchronous suspension>
+#4      Invoker._waitForOutstandingCallbacks.<anonymous closure> (package:test_api/src/backend/invoker.dart:318:9)
+<asynchronous suspension>
+
+00:00 +18: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/workout_e2e_test.dart: (setUpAll)
+00:00 +18: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/workout_e2e_test.dart: full workout session lifecycle: start → blurt → complete → analytics update
+00:00 +19: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/workout_e2e_test.dart: thoughts CRUD works end-to-end
+00:00 +20: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/workout_e2e_test.dart: stale data detection does not delete automatically
+00:00 +21: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/workout_e2e_test.dart: cold-start session with no blurt does not schedule a review
+00:00 +22: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/export_service_test.dart: Export format thoughts CSV has correct headers
+00:00 +23: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/export_service_test.dart: Export format thought toMap produces correct fields
+00:00 +24: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/export_service_test.dart: Export format thought with no linked note has null in export
+00:00 +25: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/blurt_scorer_test.dart: BlurtScorer exact recall scores high
+00:00 +26: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/blurt_scorer_test.dart: BlurtScorer recall in own words scores well (synonyms/stemming)
+00:00 +27: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/blurt_scorer_test.dart: BlurtScorer wrong-topic answer scores low
+00:00 +28: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/blurt_scorer_test.dart: BlurtScorer stemming unifies plurals
+00:00 +29: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/blurt_scorer_test.dart: BlurtScorer empty blur scores zero
+00:00 +30: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/local_ai_scorer_test.dart: LocalAiScorer.clampScore values above 100 clamp to 100
+00:00 +31: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/local_ai_scorer_test.dart: LocalAiScorer.clampScore values below 0 clamp to 0
+00:00 +32: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/local_ai_scorer_test.dart: LocalAiScorer.clampScore in-range values are unchanged
+00:00 +33: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/local_ai_scorer_test.dart: ScoreResult JSON parsing parses valid JSON with all fields
+00:00 +34: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/local_ai_scorer_test.dart: ScoreResult JSON parsing handles missing optional fields gracefully
+00:00 +35: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/local_ai_scorer_test.dart: ScoreResult JSON parsing throws FormatException when no JSON present
+00:00 +36: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/local_ai_scorer_test.dart: ScoreResult with AI fields creates ScoreResult with depth and clarity
+00:00 +37: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/local_ai_scorer_test.dart: ScoreResult with AI fields creates ScoreResult without AI fields (fallback)
+00:00 +38: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/app_database_migration_test.dart: fresh database has schema_version 5 without error
+00:00 +39: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/cognition_engine_test.dart: produces a 30-point history and 14-point forecast
+00:00 +40: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/app_database_migration_test.dart: all required adapters are registered
+00:00 +41: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/app_database_migration_test.dart: all required adapters are registered
+00:00 +42: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/app_database_migration_test.dart: all required adapters are registered
+00:00 +43: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/app_database_migration_test.dart: all required adapters are registered
+00:00 +44: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/app_database_migration_test.dart: all required adapters are registered
+00:00 +45: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/app_database_migration_test.dart: all required adapters are registered
+00:01 +46: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/forgetting_curve_service_test.dart: retentionAt(1.5, 0) == 1.0
+00:01 +47: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/forgetting_curve_service_test.dart: monotonic decrease
+00:01 +48: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/forgetting_curve_service_test.dart: retentionAt(S, S)≈0.37 (1/e — pin the math)
+00:01 +49: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/forgetting_curve_service_test.dart: empty/decay series edge cases
+00:01 +50: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/notebook_flow_test.dart: Notebook shell starts on Cover and next button turns pages
+00:01 +51: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/notebook_flow_test.dart: Notebook shell starts on Cover and next button turns pages
+00:01 +52: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/notebook_flow_test.dart: Notebook shell starts on Cover and next button turns pages
+00:01 +53: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/notebook_flow_test.dart: Notebook shell starts on Cover and next button turns pages
+00:01 +54: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/notebook_flow_test.dart: Notebook shell starts on Cover and next button turns pages
+00:02 +55: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/notebook_flow_test.dart: Notebook shell starts on Cover and next button turns pages
+00:02 +56: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/notebook_flow_test.dart: Notebook shell starts on Cover and next button turns pages
+00:02 +57: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/notebook_flow_test.dart: Notebook shell starts on Cover and next button turns pages
+00:02 +58: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/notebook_flow_test.dart: Notebook shell starts on Cover and next button turns pages
+00:02 +58: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/synonym_alias_test.dart: synonym aliases round-trip with special characters (=, comma, semicolon)
+LocalAiScorer: init failed: ParallelWaitError(4 errors): Binding has not yet been initialized.
+The "instance" getter on the ServicesBinding binding mixin is only available once that binding has been initialized.
+Typically, this is done by calling "WidgetsFlutterBinding.ensureInitialized()" or "runApp()" (the latter calls the former). Typically this call is done in the "void main()" method. The "ensureInitialized" method is idempotent; calling it multiple times is not harmful. After calling that method, the "instance" getter will return the binding.
+In a test, one can call "TestWidgetsFlutterBinding.ensureInitialized()" as the first line in the test's "main()" method to initialize the binding.
+If ServicesBinding is a custom binding mixin, there must also be a custom binding class, like WidgetsFlutterBinding, but that mixes in the selected binding, and that is the class that must be constructed before using the "instance" getter.
+dart:async/future_impl.dart 21:26                              _interceptError
+dart:async/future_impl.dart 52:23                              _interceptUserError
+dart:async/future_impl.dart 82:26                              _Completer.completeError
+dart:async/future_extensions.dart 152:11                       FutureRecord4.wait.<fn>
+dart:async/future_extensions.dart 653:18                       _FutureResult._waitAll.onReady
+dart:async/future_extensions.dart 635:18                       _FutureResult._wait.<fn>
+package:stack_trace/src/stack_zone_specification.dart 138:43   StackZoneSpecification._registerBinaryCallback.<fn>.<fn>
+package:stack_trace/src/stack_zone_specification.dart 207:15   StackZoneSpecification._run
+package:stack_trace/src/stack_zone_specification.dart 138:31   StackZoneSpecification._registerBinaryCallback.<fn>
+dart:async/zone_root.dart 70:47                                _rootRunBinary
+dart:async/zone.dart 740:19                                    _CustomZone.runBinary
+dart:async/future_impl.dart 237:22                             _FutureListener.handleError
+dart:async/future_impl.dart 960:47                             Future._propagateToListeners.handleError
+dart:async/future_impl.dart 981:13                             Future._propagateToListeners
+dart:async/future_impl.dart 738:5                              Future._completeErrorObject
+dart:async/future_impl.dart 742:5                              Future._completeError
+===== asynchronous gap ===========================
+dart:async/zone.dart 763:19                                    _CustomZone.registerBinaryCallback
+dart:async/future_impl.dart 1091:17                            _registerErrorHandler
+dart:async/future_impl.dart 408:19                             Future.then
+dart:async/future_extensions.dart 628:12                       _FutureResult._wait
+dart:async/future_extensions.dart 658:9                        _FutureResult._waitAll
+dart:async/future_extensions.dart 148:19                       FutureRecord4.wait
+package:flutter_gemma/mobile/flutter_gemma_mobile.dart 59:7    FlutterGemma.createModel
+package:neural_workout/services/local_ai_scorer.dart 39:50     LocalAiScorer.init
+package:neural_workout/state/app_state.dart 267:21             AppState._initAiScorer
+package:neural_workout/state/app_state.dart 215:13             AppState.load
+test/synonym_alias_test.dart 38:18                             main.<fn>
+===== asynchronous gap ===========================
+dart:async/zone.dart 754:19                                    _CustomZone.registerUnaryCallback
+test/synonym_alias_test.dart 31:5                              main.<fn>
+package:test_api/src/backend/declarer.dart 253:25              Declarer.test.<fn>.<fn>
+===== asynchronous gap ===========================
+dart:async/zone.dart 754:19                                    _CustomZone.registerUnaryCallback
+package:test_api/src/backend/declarer.dart 252:15              Declarer.test.<fn>.<fn>
+dart:async/zone_root.dart 35:13                                _rootRun
+dart:async/zone.dart 726:19                                    _CustomZone.run
+dart:async/zone_api.dart 166:6                                 _runZoned
+dart:async/zone_api.dart 92:10                                 runZoned
+package:test_api/src/backend/declarer.dart 250:17              Declarer.test.<fn>
+package:test_api/src/backend/invoker.dart 318:17               Invoker._waitForOutstandingCallbacks.<fn>
+dart:async/zone_root.dart 35:13                                _rootRun
+dart:async/zone.dart 726:19                                    _CustomZone.run
+dart:async/zone_api.dart 166:6                                 _runZoned
+dart:async/zone_api.dart 92:10                                 runZoned
+package:test_api/src/backend/invoker.dart 314:5                Invoker._waitForOutstandingCallbacks
+package:test_api/src/backend/invoker.dart 457:21               Invoker._onRun.<fn>.<fn>.<fn>
+===== asynchronous gap ===========================
+dart:async/zone.dart 754:19                                    _CustomZone.registerUnaryCallback
+package:test_api/src/backend/invoker.dart 455:15               Invoker._onRun.<fn>.<fn>.<fn>
+dart:async/zone_root.dart 35:13                                _rootRun
+dart:async/zone.dart 726:19                                    _CustomZone.run
+dart:async/zone_api.dart 166:6                                 _runZoned
+dart:async/zone_api.dart 92:10                                 runZoned
+package:test_api/src/backend/invoker.dart 445:11               Invoker._onRun.<fn>.<fn>
+package:test_api/src/backend/invoker.dart 500:15               Invoker._guardIfGuarded
+package:test_api/src/backend/invoker.dart 444:9                Invoker._onRun.<fn>
+package:stack_trace/src/chain.dart 97:24                       Chain.capture.<fn>
+dart:async/zone_root.dart 35:13                                _rootRun
+dart:async/zone.dart 726:19                                    _CustomZone.run
+dart:async/zone_api.dart 166:6                                 _runZoned
+dart:async/zone_api.dart 92:10                                 runZoned
+package:stack_trace/src/chain.dart 95:12                       Chain.capture
+package:test_api/src/backend/invoker.dart 442:11               Invoker._onRun
+package:test_api/src/backend/live_test_controller.dart 161:11  LiveTestController.run
+package:test_api/src/backend/remote_listener.dart 323:16       RemoteListener._runLiveTest.<fn>
+dart:async/zone_root.dart 35:13                                _rootRun
+dart:async/zone.dart 726:19                                    _CustomZone.run
+dart:async/zone_api.dart 166:6                                 _runZoned
+dart:async/zone_api.dart 92:10                                 runZoned
+package:test_api/src/backend/remote_listener.dart 322:5        RemoteListener._runLiveTest
+package:test_api/src/backend/remote_listener.dart 263:7        RemoteListener._serializeTest.<fn>
+dart:async/zone_root.dart 48:47                                _rootRunUnary
+dart:async/zone.dart 733:19                                    _CustomZone.runUnary
+dart:async/zone.dart 633:7                                     _CustomZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:async/zone_root.dart 56:13                                _rootRunUnary
+dart:async/zone.dart 733:19                                    _CustomZone.runUnary
+dart:async/zone.dart 633:7                                     _CustomZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:async/stream_controller.dart 898:13                       _StreamSinkWrapper.add
+package:stream_channel/src/guarantee_channel.dart 125:12       _GuaranteeSink.add
+package:stream_channel/src/multi_channel.dart 159:31           new _MultiChannel.<fn>
+dart:async/zone.dart 891:10                                    _RootZone.runUnaryGuarded
+dart:_internal/async_cast.dart 95:11                           CastStreamSubscription._onData
+dart:async/zone.dart 891:10                                    _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:async/zone.dart 891:10                                    _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:async/stream_controller.dart 898:13                       _StreamSinkWrapper.add
+dart:async/zone.dart 891:10                                    _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_pipe.dart 154:11                             _ForwardingStreamSubscription._add
+dart:async/stream_pipe.dart 252:10                             _MapStream._handleData
+dart:async/stream_pipe.dart 184:13                             _ForwardingStreamSubscription._handleData
+dart:async/zone.dart 891:10                                    _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+dart:async/stream_controller.dart 618:5                        _StreamController.add
+dart:_http/websocket_impl.dart 1252:27                         new _WebSocketImpl._fromSocket.<fn>
+dart:async/zone.dart 891:10                                    _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_transformers.dart 67:11                      _SinkTransformerStreamSubscription._add
+dart:async/stream_transformers.dart 13:11                      _EventSinkWrapper.add
+dart:_http/websocket_impl.dart 348:23                          _WebSocketProtocolTransformer._messageFrameEnd
+dart:_http/websocket_impl.dart 238:46                          _WebSocketProtocolTransformer.add
+dart:async/stream_transformers.dart 115:24                     _SinkTransformerStreamSubscription._handleData
+dart:async/zone.dart 891:10                                    _RootZone.runUnaryGuarded
+dart:async/stream_impl.dart 381:11                             _BufferingStreamSubscription._sendData
+dart:async/stream_impl.dart 312:7                              _BufferingStreamSubscription._add
+dart:async/stream_controller.dart 798:19                       _SyncStreamControllerDispatch._sendData
+dart:async/stream_controller.dart 663:7                        _StreamController._add
+00:02 +59: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/notebook_flow_test.dart: Notebook shell starts on Cover and next button turns pages
+00:02 +60: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/notebook_flow_test.dart: Notebook shell starts on Cover and next button turns pages
+00:02 +61: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/notebook_flow_test.dart: Notebook shell starts on Cover and next button turns pages
+00:02 +62: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/notebook_flow_test.dart: Notebook shell starts on Cover and next button turns pages
+00:02 +63: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/notebook_flow_test.dart: Notebook shell starts on Cover and next button turns pages
+00:02 +64: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/notebook_flow_test.dart: Notebook shell starts on Cover and next button turns pages
+00:02 +65: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/notebook_flow_test.dart: Notebook shell starts on Cover and next button turns pages
+00:02 +65: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/notebook_pages_test.dart: Today page prompts for new blurt by default
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: exactly one matching candidate
+  Actual: _TextWidgetFinder:<Found 0 widgets with text "Write a blurt.": []>
+   Which: means none were found but one was expected
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/notebook_pages_test.dart:48:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1952:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/notebook_pages_test.dart line 48
+The test description was:
+  Today page prompts for new blurt by default
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:02 +65 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/notebook_flow_test.dart: Notebook shell starts on Cover and next button turns pages
+00:02 +65 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/notebook_pages_test.dart: Today page prompts for new blurt by default [E]
+  Test failed. See exception logs above.
+  The test description was: Today page prompts for new blurt by default
+  
+00:02 +66 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/plasticity_service_test.dart: PlasticityService cognitiveSpeed: strict descending series -> negative slope, sharpening
+00:02 +67 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/plasticity_service_test.dart: PlasticityService recoveryReserve: empty -> 0 with learning flag
+00:02 +68 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/plasticity_service_test.dart: PlasticityService recoveryReserve: all 5s -> 100
+00:02 +69 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/plasticity_service_test.dart: PlasticityService recoveryReserve: all 1s -> 0
+00:02 +70 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/plasticity_service_test.dart: PlasticityService desirableDifficulty: 77.5% accuracy + 35% hard + 3 interleaves -> near 100
+00:02 +71 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/plasticity_service_test.dart: PlasticityService networkIntegration: fully connected
+00:02 +72 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/plasticity_service_test.dart: PlasticityService mindfulness: all primed -> 100
+00:02 +73 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/streak_service_test.dart: fresh user with no sessions has a zero streak
+00:02 +74 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/streak_service_test.dart: fresh user with no sessions has a zero streak
+00:02 +75 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/metrics_service_test.dart: MetricsService computes cross-link density
+00:02 +76 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/streak_service_test.dart: consecutive session days build the streak
+00:02 +77 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/metrics_service_test.dart: MetricsService computes retention over time
+00:02 +78 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/metrics_service_test.dart: MetricsService computes retention over time
+00:02 +79 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/streak_service_test.dart: two misses within a 7-day window break the streak
+00:02 +80 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/metrics_service_test.dart: MetricsService loss rate is zero when retention is positive
+00:02 +81 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/streak_service_test.dart: grace token is fresh again once the miss window passes
+00:02 +82 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/streak_service_test.dart: a recent miss still consumes the current window grace
+00:02 +83 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/streak_service_test.dart: grace day after a recent miss does not extend streak (grace bridges but does not count)
+00:02 +84 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/science_fixes_test.dart: scoreToRating boundaries (FSRS bands) failed recall (<40) maps to again — shortest interval
+00:02 +85 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/science_fixes_test.dart: scoreToRating boundaries (FSRS bands) rocky recall (40–70) maps to hard
+00:02 +86 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/science_fixes_test.dart: scoreToRating boundaries (FSRS bands) solid recall (70–90) maps to good
+00:02 +87 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/science_fixes_test.dart: scoreToRating boundaries (FSRS bands) mastered recall (≥90) maps to easy — longest interval
+00:02 +88 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/science_fixes_test.dart: scoreToRating boundaries (FSRS bands) null score maps to good, NOT easy (cold-start guard)
+00:02 +89 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/science_fixes_test.dart: scoreToRating boundaries (FSRS bands) rating bands are ordered so easy schedules further out than again
+00:02 +90 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/strategy_profile_test.dart: synthetic AppState-like inputs → known scores
+00:02 +91 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/strategy_profile_test.dart: empty inputs → all zeros, no NaN
+00:02 +92 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/suggestion_service_test.dart: (setUpAll)
+00:02 +92 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/suggestion_service_test.dart: many due notes produce a high-priority suggestion
+00:03 +93 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/ranking_service_test.dart: RankingService overall score is 0 with no blurts
+00:03 +94 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/ranking_service_test.dart: RankingService overall score is 0 with no blurts
+00:03 +95 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/ranking_service_test.dart: RankingService overall score is 0 with no blurts
+00:03 +96 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/suggestion_service_test.dart: (tearDownAll)
+00:03 +96 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/ranking_service_test.dart: RankingService overall score increases with better blurts
+00:03 +97 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/ranking_service_test.dart: RankingService weakest areas returns lowest-scoring areas
+00:03 +98 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/ranking_service_test.dart: RankingService mastered baseline constants are defined
+00:03 +99 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/ranking_service_test.dart: RankingService failed recall maps to again
+00:03 +100 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/ranking_service_test.dart: RankingService struggling recall maps to hard
+00:03 +101 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/ranking_service_test.dart: RankingService solid recall maps to good
+00:03 +102 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/ranking_service_test.dart: RankingService near-perfect recall maps to easy
+00:03 +103 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/ranking_service_test.dart: RankingService null score defaults to good
+00:03 +104 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/ranking_service_test.dart: RankingService FSRS schedules differently for different ratings
+00:03 +105 -1: /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/ranking_service_test.dart: RankingService overall score does not double-count accuracy when no reviews
+00:03 +106 -1: Some tests failed.
+
+Failing tests:
+  /Users/akarsh/Desktop/Prompts/study/neural_workout_app/test/notebook_pages_test.dart: Today page prompts for new blurt by default

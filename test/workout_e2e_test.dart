@@ -69,7 +69,7 @@ void main() {
     // 5. Analytics updated after completion.
     expect(state.sessions.length, greaterThan(0));
     expect(state.pathwayRecords.length, greaterThan(0));
-    expect(state.overallScore, greaterThanOrEqualTo(0));
+    expect(state.getOverallScore(), greaterThanOrEqualTo(0));
 
     // Wait, the review history should be updated if schedule step fired (regression test for anchor note persistence).
     // The previous bug lost the anchorId so it created multiple notes and never scheduled reviews.

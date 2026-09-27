@@ -14,6 +14,10 @@
 /// The grace token is persisted in PathwayRecord.graceUsed so it survives
 /// app restarts and is auditable.
 class StreakService {
+  bool _anyWithinWindow(List<int> offsets, int current, int windowSize) {
+    return offsets.any((d) => (current - d).abs() <= windowSize);
+  }
+
   StreakInfo compute(
     List<DateTime> sessionDays, {
     DateTime? now,
@@ -36,20 +40,21 @@ class StreakService {
       if (daySet.contains(cursor)) {
         streak++;
       } else if (graceDaySet.contains(cursor)) {
-        // grace day bridges but does not increment streak
+        // Explicit break: Grace day bridges the streak without incrementing it.
         graceOffsets.add(i);
       } else {
-        // break if a miss OR a grace (which consumed the token) is within window
-        final blockedByMiss  = missOffsets.any((d) => (i - d).abs() <= 6);
-        final blockedByGrace = graceOffsets.any((d) => (i - d).abs() <= 6);
+        // Missing a day uses up a grace token if available within the rolling 7-day window.
+        // Therefore, we break the streak if there's already another miss OR a used grace token in this window.
+        final blockedByMiss  = _anyWithinWindow(missOffsets, i, 6);
+        final blockedByGrace = _anyWithinWindow(graceOffsets, i, 6);
         if (blockedByMiss || blockedByGrace) break;
         missOffsets.add(i);
       }
       cursor = cursor.subtract(const Duration(days: 1));
     }
 
-    final graceUsed = missOffsets.any((d) => d.abs() <= 6) ||
-                    graceOffsets.any((d) => d.abs() <= 6);
+    final graceUsed = _anyWithinWindow(missOffsets, 0, 6) ||
+                      _anyWithinWindow(graceOffsets, 0, 6);
     return StreakInfo(current: streak, graceAvailable: !graceUsed);
   }
 }

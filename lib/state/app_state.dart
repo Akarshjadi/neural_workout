@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 
 import 'package:fsrs/fsrs.dart';
 import 'package:flutter/foundation.dart';
@@ -21,12 +22,18 @@ import '../services/pathway_service.dart';
 import '../services/ranking_service.dart';
 import '../services/streak_service.dart';
 import '../services/suggestion_service.dart';
+import '../models/break_record.dart';
+import '../services/break_service.dart';
+import '../services/strategy_profile_service.dart';
+import '../models/daily_checkin.dart';
+import '../services/plasticity_service.dart';
 
 class AppState extends ChangeNotifier {
   final AppDatabase db;
   final FsrsEngine fsrs = FsrsEngine();
   PathwayService pathways = PathwayService();
   final StreakService streakSvc = StreakService();
+  final BreakService breakSvc = BreakService();
   final LocalAiScorer _aiScorer = LocalAiScorer();
   final MetricsService metricsSvc = MetricsService();
   final RankingService rankingSvc = RankingService();
@@ -42,10 +49,73 @@ class AppState extends ChangeNotifier {
   bool aiEnabled = true;
 
   /// Phase 5 — Cached overall score.
-  double overallScore = 0;
+  double _overallScore = 0;
 
   /// Phase 6 — Cached suggestions.
-  List<String> suggestions = [];
+  List<String> _suggestions = [];
+
+  List<BreakRecord> _breaks = [];
+  List<BreakRecord> get breaks => List.unmodifiable(_breaks);
+
+  List<DailyCheckin> _checkins = [];
+  List<DailyCheckin> get checkins => List.unmodifiable(_checkins);
+  bool get hasCheckinToday => _checkins.any((r) => r.date.year == DateTime.now().year && r.date.month == DateTime.now().month && r.date.day == DateTime.now().day);
+
+  bool focusPrimedThisSession = false;
+  Future<void> markFocusPrimed() async {
+    focusPrimedThisSession = true;
+    notifyListeners();
+  }
+
+  int? _pageTrigger;
+  int? get pageTrigger => _pageTrigger;
+  void triggerPage(int index) {
+    _pageTrigger = index;
+    notifyListeners();
+  }
+  void consumePageTrigger() {
+    _pageTrigger = null;
+  }
+
+  PlasticityProfile? _plasticityProfileCache;
+  PlasticityProfile get plasticityProfile {
+    _plasticityProfileCache ??= const PlasticityService().profile(
+      blurts: blurtScores,
+      checkins: _checkins,
+      reviews: db.reviewHistory(),
+      notes: notes,
+      linkCounts: db.linkCountsByNote(),
+      sessions: db.allSessions(),
+      now: DateTime.now(),
+    );
+    return _plasticityProfileCache!;
+  }
+
+
+  StrategyProfile? _strategyProfileCache;
+
+  StrategyProfile? get strategyProfile {
+    if (_strategyProfileCache == null) {
+      final rawReviews = db.reviewHistory();
+      final linkCounts = db.linkCountsByNote();
+      int interleavedCount = 0;
+      for (final r in rawReviews) {
+        if ((r['was_interleaved'] as int? ?? 0) == 1) interleavedCount++;
+      }
+      _strategyProfileCache = StrategyProfileService().compute(
+        blurts: blurtScores,
+        notes: notes,
+        sessions: sessions,
+        reviewRows: rawReviews,
+        interleavedCount: interleavedCount,
+        totalReviewCount: rawReviews.length,
+        linkCounts: linkCounts,
+      );
+    }
+    return _strategyProfileCache;
+  }
+
+  BreakStatus get breakStatus => breakSvc.computeStatus(records: _breaks, now: DateTime.now());
 
   /// User-grown synonym/alias table (issue 10): kebab concept -> alternatives.
   /// Loaded from the settings box at startup; grown via [addSynonymAlias].
@@ -131,6 +201,8 @@ class AppState extends ChangeNotifier {
     blurtScores = db.allBlurtScores();
     pathwayRecords = db.pathwayRecords();
     thoughts = db.allThoughts();
+    _loadBreaks();
+    _loadCheckins();
 
     // Restore user-adjustable weekly targets from settings (issue 12).
     pathways = PathwayService(targets: _loadPathwayTargets());
@@ -168,12 +240,9 @@ class AppState extends ChangeNotifier {
     }
 
     // Phase 5 — Compute overall score.
-    final linkCounts = <int, int>{};
-    for (final n in notes) {
-      linkCounts[n.id] = db.linkCountForNote(n.id);
-    }
+    final linkCounts = db.linkCountsByNote();
     final reviewStats = computeReviewStats(db);
-    overallScore = rankingSvc.overallScore(
+    _overallScore = rankingSvc.overallScore(
       blurts: blurtScores,
       notes: notes,
       pathways: pathwayRecords,
@@ -183,7 +252,7 @@ class AppState extends ChangeNotifier {
     );
 
     // Phase 6 — Compute suggestions.
-    suggestions = suggestionSvc.generateSuggestions(this);
+    _suggestions = suggestionSvc.generateSuggestions(this);
 
     notifyListeners();
   }
@@ -226,16 +295,16 @@ class AppState extends ChangeNotifier {
 
   /// Phase 6 — Deferred initialization of AI scorer and notifications off the startup path.
   void initDeferredServices() {
-    _initAiScorer().catchError((e, st) {
+    unawaited(_initAiScorer().catchError((e, st) {
       debugPrint('initDeferredServices: AI init failed: $e\n$st');
-    });
-    notificationSvc.init().then((_) {
+    }));
+    unawaited(notificationSvc.init().then((_) {
       if (dueNotesList.isNotEmpty) {
         notificationSvc.scheduleForDueCards(dueNotesList);
       }
     }).catchError((e, st) {
       debugPrint('initDeferredServices: notification init failed: $e\n$st');
-    });
+    }));
   }
 
   /// Review history sorted by date descending (for analytics screen).
@@ -329,12 +398,11 @@ class AppState extends ChangeNotifier {
 
   /// Recalculate cached analytics after data mutations.
   void _refreshAnalytics() {
-    final linkCounts = <int, int>{};
-    for (final n in notes) {
-      linkCounts[n.id] = db.linkCountForNote(n.id);
-    }
+    _strategyProfileCache = null;
+    _plasticityProfileCache = null;
+    final linkCounts = db.linkCountsByNote();
     final reviewStats = computeReviewStats(db);
-    overallScore = rankingSvc.overallScore(
+    _overallScore = rankingSvc.overallScore(
       blurts: blurtScores,
       notes: notes,
       pathways: pathwayRecords,
@@ -342,7 +410,7 @@ class AppState extends ChangeNotifier {
       totalReviews: reviewStats.total,
       retrievableReviews: reviewStats.retrievable,
     );
-    suggestions = suggestionSvc.generateSuggestions(this);
+    _suggestions = suggestionSvc.generateSuggestions(this);
   }
 
   /// Compute review statistics for retention metric.
@@ -436,6 +504,43 @@ class AppState extends ChangeNotifier {
   Future<void> setCheatSheet(String text) async {
     activeWorkout = activeWorkout?.copyWith(cheatSheetText: text.trim());
     await _autosave();
+  }
+
+  void _loadBreaks() {
+    try {
+      final str = db.getSetting('break_records');
+      if (str != null && str.isNotEmpty) {
+        final List<dynamic> dyn = json.decode(str);
+        _breaks = dyn.map((d) => BreakRecord.fromJson(d)).toList();
+      }
+    } catch (e) {
+      debugPrint('Failed to load breaks: $e');
+      _breaks = [];
+    }
+  }
+  void _loadCheckins() {
+    _checkins = db.allCheckins();
+  }
+
+  Future<void> logCheckin({required int sleep, required int energy, required int activity}) async {
+    final c = DailyCheckin(date: DateTime.now(), sleep: sleep, energy: energy, activity: activity);
+    await db.insertCheckin(c);
+    _checkins = db.allCheckins();
+    _refreshAnalytics();
+    notifyListeners();
+  }
+
+
+  void logBreak({required BreakTier tier, required Duration duration}) {
+    _breaks.add(BreakRecord(
+      id: DateTime.now().millisecondsSinceEpoch,
+      startedAt: DateTime.now(),
+      tier: tier,
+      duration: duration
+    ));
+    db.setSetting('break_records', json.encode(_breaks.map((b) => b.toJson()).toList()));
+    _refreshAnalytics();
+    notifyListeners();
   }
 
   Future<void> setLinkText(String text) async {
@@ -877,13 +982,10 @@ class AppState extends ChangeNotifier {
   );
 
   // ── Phase 5 — Ranking ───────────────────────────────────
-  double getOverallScore() => overallScore;
+  double getOverallScore() => _overallScore;
 
   List<String> getWeakestAreas() {
-    final linkCounts = <int, int>{};
-    for (final n in notes) {
-      linkCounts[n.id] = db.linkCountForNote(n.id);
-    }
+    final linkCounts = db.linkCountsByNote();
     final reviewStats = computeReviewStats(db);
     return rankingSvc.weakestAreas(
       blurts: blurtScores,
@@ -896,7 +998,7 @@ class AppState extends ChangeNotifier {
   }
 
   // ── Phase 6 — Suggestions ───────────────────────────────
-  List<String> getSuggestions() => suggestions;
+  List<String> getSuggestions() => _suggestions;
 
   // ── Phase 2 — Metrics ───────────────────────────────────
   BlurtMetrics computeMetrics(BlurtScore blurt) {

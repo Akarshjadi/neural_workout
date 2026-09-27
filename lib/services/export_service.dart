@@ -131,7 +131,15 @@ class ExportService {
   }
 
   String _sanitize(String cell) {
-    if (cell.startsWith('=') || cell.startsWith('+') || cell.startsWith('-') || cell.startsWith('@')) {
+    if (cell.startsWith('=') ||
+        cell.startsWith('+') ||
+        cell.startsWith('@') ||
+        cell.startsWith('\t') ||
+        cell.startsWith('\r')) {
+      return "'$cell";
+    }
+    // Only guard '-' if the rest could be interpreted as a malicious formula/command
+    if (cell.startsWith('-') && cell.length > 1 && !RegExp(r'^-[0-9.]+$').hasMatch(cell)) {
       return "'$cell";
     }
     return cell;

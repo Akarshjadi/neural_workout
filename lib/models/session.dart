@@ -13,6 +13,7 @@ class Session {
   final int? anchorNoteId;
   final String? anchorTitle;
   final String? autosaveJson; // serialized wizard WIP for resume
+  final bool focusPrimed;
 
   const Session({
     required this.id,
@@ -22,6 +23,7 @@ class Session {
     this.anchorNoteId,
     this.anchorTitle,
     this.autosaveJson,
+    this.focusPrimed = false,
   });
 
   /// Persistence: see HiveSessionAdapter in app_database.g.dart.

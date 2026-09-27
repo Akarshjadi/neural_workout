@@ -3,8 +3,8 @@ import 'package:provider/provider.dart';
 
 import 'data/app_database.dart';
 import 'state/app_state.dart';
-import 'ui/app_shell.dart';
-import 'ui/theme.dart';
+import 'ui/page_turn_controller.dart';
+import 'ui/theme_notebook.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,9 +52,9 @@ class _NeuralWorkoutAppState extends State<NeuralWorkoutApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Neural Workout',
+      title: 'Field Notebook',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark(),
+      theme: NotebookTheme.theme,
       builder: (context, child) {
         final messenger = ScaffoldMessenger.of(context);
         // If storage failed on boot (e.g. IndexedDB blocked in Safari), flash a
@@ -66,14 +66,15 @@ class _NeuralWorkoutAppState extends State<NeuralWorkoutApp> {
               SnackBar(
                 content: Text('Startup warning:\n${widget.initError}',
                     style: const TextStyle(fontSize: 12)),
-                backgroundColor: AppTheme.danger.withValues(alpha: 0.9),
+                backgroundColor: NotebookTheme.oxblood.withValues(alpha: 0.9),
               ),
             );
           });
         }
         return child!;
       },
-      home: const AppShell(),
+      home: const NotebookShell(),
     );
   }
 }
+

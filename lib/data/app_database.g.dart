@@ -80,13 +80,14 @@ class HiveSessionAdapter extends TypeAdapter<HiveSession> {
       ..stepsCompleted = fields[3] as int?
       ..anchorNoteId = fields[4] as int?
       ..anchorTitle = fields[5] as String?
-      ..autosaveJson = fields[6] as String?;
+      ..autosaveJson = fields[6] as String?
+      ..focusPrimed = fields[7] as bool?;
   }
 
   @override
   void write(BinaryWriter writer, HiveSession obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -100,7 +101,9 @@ class HiveSessionAdapter extends TypeAdapter<HiveSession> {
       ..writeByte(5)
       ..write(obj.anchorTitle)
       ..writeByte(6)
-      ..write(obj.autosaveJson);
+      ..write(obj.autosaveJson)
+      ..writeByte(7)
+      ..write(obj.focusPrimed);
   }
 
   @override
@@ -318,6 +321,42 @@ class HiveLinkAdapter extends TypeAdapter<HiveLink> {
           typeId == other.typeId;
 }
 
+class HiveSettingAdapter extends TypeAdapter<HiveSetting> {
+  @override
+  final int typeId = 6;
+
+  @override
+  HiveSetting read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return HiveSetting()
+      ..key = fields[0] as String?
+      ..value = fields[1] as String?;
+  }
+
+  @override
+  void write(BinaryWriter writer, HiveSetting obj) {
+    writer
+      ..writeByte(2)
+      ..writeByte(0)
+      ..write(obj.key)
+      ..writeByte(1)
+      ..write(obj.value);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is HiveSettingAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
 class HiveThoughtAdapter extends TypeAdapter<HiveThought> {
   @override
   final int typeId = 7;
@@ -366,29 +405,35 @@ class HiveThoughtAdapter extends TypeAdapter<HiveThought> {
           typeId == other.typeId;
 }
 
-class HiveSettingAdapter extends TypeAdapter<HiveSetting> {
+class HiveCheckinAdapter extends TypeAdapter<HiveCheckin> {
   @override
-  final int typeId = 6;
+  final int typeId = 8;
 
   @override
-  HiveSetting read(BinaryReader reader) {
+  HiveCheckin read(BinaryReader reader) {
     final numOfFields = reader.readByte();
     final fields = <int, dynamic>{
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
-    return HiveSetting()
-      ..key = fields[0] as String?
-      ..value = fields[1] as String?;
+    return HiveCheckin()
+      ..date = fields[0] as String?
+      ..sleep = fields[1] as int?
+      ..energy = fields[2] as int?
+      ..activity = fields[3] as int?;
   }
 
   @override
-  void write(BinaryWriter writer, HiveSetting obj) {
+  void write(BinaryWriter writer, HiveCheckin obj) {
     writer
-      ..writeByte(2)
+      ..writeByte(4)
       ..writeByte(0)
-      ..write(obj.key)
+      ..write(obj.date)
       ..writeByte(1)
-      ..write(obj.value);
+      ..write(obj.sleep)
+      ..writeByte(2)
+      ..write(obj.energy)
+      ..writeByte(3)
+      ..write(obj.activity);
   }
 
   @override
@@ -397,7 +442,7 @@ class HiveSettingAdapter extends TypeAdapter<HiveSetting> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is HiveSettingAdapter &&
+      other is HiveCheckinAdapter &&
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }

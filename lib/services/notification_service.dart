@@ -13,7 +13,6 @@ class NotificationService {
 
   // Notification IDs
   static const int nightReview = 101;
-  static const int dueCards = 102;
   static const int cardsDue = 9999;
 
   Future<void> init() async {
@@ -127,4 +126,22 @@ class NotificationService {
       debugPrint('NotificationService: cancelAll failed: $e\n$stackTrace');
     }
   }
+
+  /// Schedule break reminders.
+  Future<bool> scheduleBreakReminders() async {
+    if (!_ready) return false;
+    try {
+      // Just a simple midday reminder for micro breaks. (ponytail style)
+      return await scheduleDaily(
+        hour: 14,
+        minute: 0,
+        title: 'Micro Break Reminder',
+        body: 'Time for a 5m break to lock in memory synthesis.',
+        id: 103, // break reminder ID
+      );
+    } catch (e) {
+      return false;
+    }
+  }
 }
+

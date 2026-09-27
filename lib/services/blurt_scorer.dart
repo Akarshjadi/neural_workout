@@ -65,7 +65,7 @@ class BlurtScorer {
 
       bool found = blurWords.contains(concept) ||
           blurWords.contains(stemmed) ||
-          aliases.any((a) => blurWords.contains(stem(a)));
+          aliases.any((a) => blurWords.contains(a) || blurWords.contains(stem(a)));
 
       if (!found && concept.length >= _minConceptLengthForFuzzy && blurWords.isNotEmpty) {
         for (final w in blurWords) {

@@ -8,6 +8,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../models/note.dart';
 import '../models/pathway_record.dart';
 import '../models/session.dart';
+import '../models/daily_checkin.dart';
 import '../models/blurt_score.dart';
 import '../models/thought.dart';
 
@@ -36,6 +37,7 @@ class HiveSession {
   @HiveField(4) int? anchorNoteId;
   @HiveField(5) String? anchorTitle;
   @HiveField(6) String? autosaveJson;
+  @HiveField(7) bool? focusPrimed;
 }
 
 @HiveType(typeId: 2)
@@ -98,17 +100,26 @@ class HiveThought {
   @HiveField(5) String? deletedAt; // soft delete
 }
 
+@HiveType(typeId: 8)
+class HiveCheckin {
+  @HiveField(0) String? date;
+  @HiveField(1) int? sleep;
+  @HiveField(2) int? energy;
+  @HiveField(3) int? activity;
+}
+
+
 /// Local database access using Hive.
 ///
 /// Precondition: Readers and writers assume Hive boxes have been opened via
 /// [AppDatabase.ensureInitialized()]. Reader methods include defensive checks
 /// (`Hive.isBoxOpen`) returning empty results if called prior to initialization.
 class AppDatabase {
-  static const _nb = 'notes', _sb = 'sessions', _bb = 'blurt_scores', _pb = 'pathway_records', _rb = 'reviews', _lb = 'links', _stb = 'settings', _mb = 'meta', _tb = 'thoughts';
+  static const _nb = 'notes', _sb = 'sessions', _bb = 'blurt_scores', _pb = 'pathway_records', _rb = 'reviews', _lb = 'links', _stb = 'settings', _mb = 'meta', _tb = 'thoughts', _cb = 'checkins';
 
   /// Schema version — bump when adding/removing fields or boxes.
-  /// 1: initial  2: +deletedAt on Note  3: +metrics on BlurtScore  4: +Thought box
-  static const int schemaVersion = 4;
+  /// 1: initial  2: +deletedAt on Note  3: +metrics on BlurtScore  4: +Thought box 5: +Checkins +focusPrimed
+  static const int schemaVersion = 5;
 
   /// Registers each adapter independently (guarding on its own typeId) so a
   /// partially-registered runtime can't silently skip the rest (issue #17).
@@ -125,6 +136,7 @@ class AppDatabase {
     if (!Hive.isAdapterRegistered(5)) Hive.registerAdapter(HiveLinkAdapter());
     if (!Hive.isAdapterRegistered(6)) Hive.registerAdapter(HiveSettingAdapter());
     if (!Hive.isAdapterRegistered(7)) Hive.registerAdapter(HiveThoughtAdapter());
+    if (!Hive.isAdapterRegistered(8)) Hive.registerAdapter(HiveCheckinAdapter());
   }
 
   static Future<void> ensureInitialized() async {
@@ -139,6 +151,7 @@ class AppDatabase {
     await Hive.openBox(_stb);
     await Hive.openBox(_mb);
     await Hive.openBox(_tb);
+    await Hive.openBox(_cb);
     _checkSchemaVersion();
   }
 
@@ -158,6 +171,7 @@ class AppDatabase {
     if (fromVersion < 2) _migrateV1ToV2();
     if (fromVersion < 3) _migrateV2ToV3();
     if (fromVersion < 4) _migrateV3ToV4();
+    if (fromVersion < 5) _migrateV4ToV5();
   }
 
   /// v1 → v2: Add deletedAt field to existing notes (defaults to null = not deleted).
@@ -191,6 +205,19 @@ class AppDatabase {
     // Thoughts box is new; nothing to migrate.
   }
 
+  /// v4 → v5: Add focusPrimed field to existing sessions (backfill to false).
+  static void _migrateV4ToV5() {
+    if (!Hive.isBoxOpen(_sb)) return;
+    final box = Hive.box(_sb);
+    for (final key in box.keys) {
+      final session = box.get(key) as HiveSession?;
+      if (session != null && session.focusPrimed == null) {
+        session.focusPrimed = false;
+        box.put(key, session);
+      }
+    }
+  }
+
   int _nextId(String b) {
     final m = Hive.box(_mb);
     final c = m.get('seq_$b', defaultValue: 0) as int;
@@ -206,6 +233,7 @@ class AppDatabase {
   Box get _l => Hive.box(_lb);
   Box get _st => Hive.box(_stb);
   Box get _t => Hive.box(_tb);
+  Box get _c => Hive.box(_cb);
 
   /// Returns non-deleted notes only (Phase 4 — soft delete filter).
   List<Note> allNotes({bool includeDeleted = false}) {
@@ -343,6 +371,30 @@ class AppDatabase {
     }
     return best;
   }
+  HiveCheckin _cT(DailyCheckin c) => HiveCheckin()
+    ..date = c.date.toIso8601String()
+    ..sleep = c.sleep
+    ..energy = c.energy
+    ..activity = c.activity;
+
+  DailyCheckin _cF(HiveCheckin h) => DailyCheckin(
+    date: DateTime.tryParse(h.date ?? '') ?? DateTime.now(),
+    sleep: h.sleep ?? 1,
+    energy: h.energy ?? 1,
+    activity: h.activity ?? 1,
+  );
+
+  List<DailyCheckin> allCheckins() {
+    if (!Hive.isBoxOpen(_cb)) return [];
+    return _c.values.map((e) => _cF(e as HiveCheckin)).toList();
+  }
+
+  Future<void> insertCheckin(DailyCheckin c) async {
+    // using ISO8601 date string (YYYY-MM-DD) as key for uniqueness per day
+    final key = "${c.date.year}-${c.date.month.toString().padLeft(2, '0')}-${c.date.day.toString().padLeft(2, '0')}";
+    await _c.put(key, _cT(c));
+  }
+
 
   Future<int> insertBlurtScore(BlurtScore bs) async {
     final id = _nextId(_bb);
@@ -478,6 +530,9 @@ class AppDatabase {
   }
 
   /// Returns a map of note id -> link count for all notes, computed once.
+  List<HiveLink> get allLinks => Hive.isBoxOpen(_lb) ? _l.values.cast<HiveLink>().toList() : [];
+
+
   Map<int, int> linkCountsByNote() {
     if (!Hive.isBoxOpen(_lb)) return {};
     final m = <int, int>{};
@@ -511,7 +566,8 @@ class AppDatabase {
     ..stepsCompleted = s.stepsCompleted
     ..anchorNoteId = s.anchorNoteId
     ..anchorTitle = s.anchorTitle
-    ..autosaveJson = s.autosaveJson;
+    ..autosaveJson = s.autosaveJson
+    ..focusPrimed = s.focusPrimed;
 
   Session _sR(HiveSession h) => Session(
     id: h.id ?? 0,
@@ -521,6 +577,7 @@ class AppDatabase {
     anchorNoteId: h.anchorNoteId,
     anchorTitle: h.anchorTitle ?? '',
     autosaveJson: h.autosaveJson,
+    focusPrimed: h.focusPrimed ?? false,
   );
 
   HiveBlurtScore _bT(BlurtScore b, int id) => HiveBlurtScore()

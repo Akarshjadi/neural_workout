@@ -14,7 +14,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
         // flutter_local_notifications requires core library desugaring (Java 8
         // features like lambdas in third-party AARs). Enable it per config.
-        coreLibraryDesugaring = true
+        isCoreLibraryDesugaringEnabled = true
     }
 
     defaultConfig {
@@ -44,6 +44,10 @@ kotlin {
     compilerOptions {
         jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
     }
+}
+
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }
 
 flutter {
