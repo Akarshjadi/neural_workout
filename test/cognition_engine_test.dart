@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import '../lib/models/blurt_score.dart';
-import '../lib/models/note.dart';
-import '../lib/services/cognition_engine.dart';
 import 'package:fsrs/fsrs.dart';
+import 'package:neural_workout/models/blurt_score.dart';
+import 'package:neural_workout/models/note.dart';
+import 'package:neural_workout/services/cognition_engine.dart';
 
 void main() {
   final today = DateTime(2026, 9, 25);

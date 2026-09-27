@@ -53,11 +53,6 @@ void main() {
 
     test('desirableDifficulty: 77.5% accuracy + 35% hard + 3 interleaves -> near 100', () {
       final blurts = List.generate(7, (i) => BlurtScore(id: i, noteId: 1, noteTitle: '', date: now.subtract(Duration(days: i)), scorePct: 0.775, matched: [], missed: []));
-      final reviews = List.generate(7, (i) => <String, dynamic>{
-        'date': now.subtract(Duration(days: i)).toIso8601String(),
-        'rating': i < 2 ? 'hard' : (i == 2 ? 'again' : 'good'), // 3/7 = ~42% (close to 35)
-        'wasInterleaved': true // 7 times across 7 days = 1/day, wait we need 3/day
-      });
       // To get 3/day we need 21 interleave reviews over 7 days
       final moreReviews = List.generate(21, (i) => <String, dynamic>{
         'date': now.subtract(Duration(days: i % 7)).toIso8601String(),
