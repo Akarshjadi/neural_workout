@@ -29,6 +29,14 @@ class WorkoutSessionState {
   List<String> scoreMatched;
   List<String> scoreMissed;
 
+  // Phase 6/7 — error-shaped session prompts. Populated by AppState.startSession
+  // when planStep produces a non-baseline intervention. Empty strings = no
+  // shaped prompt; the blurt page falls back to its default placeholder.
+  final String promptQuestion;
+  final String promptCue;
+  final String interventionExplanation;
+  final int? timerSeconds;
+
   WorkoutSessionState({
     required this.start,
     this.stepsCompleted = 0,
@@ -41,6 +49,10 @@ class WorkoutSessionState {
     this.scorePct,
     this.scoreMatched = const [],
     this.scoreMissed = const [],
+    this.promptQuestion = '',
+    this.promptCue = '',
+    this.interventionExplanation = '',
+    this.timerSeconds,
   });
 
   bool get isComplete => stepsCompleted >= 8;
@@ -63,6 +75,10 @@ class WorkoutSessionState {
     Object? scorePct = _unset,
     Object? scoreMatched = _unset,
     Object? scoreMissed = _unset,
+    Object? promptQuestion = _unset,
+    Object? promptCue = _unset,
+    Object? interventionExplanation = _unset,
+    Object? timerSeconds = _unset,
   }) =>
       WorkoutSessionState(
         start: start,
@@ -92,11 +108,23 @@ class WorkoutSessionState {
         scoreMissed: identical(scoreMissed, _unset)
             ? this.scoreMissed
             : (scoreMissed as List<String>? ?? const []),
+        promptQuestion: identical(promptQuestion, _unset)
+            ? this.promptQuestion
+            : (promptQuestion as String? ?? ''),
+        promptCue: identical(promptCue, _unset)
+            ? this.promptCue
+            : (promptCue as String? ?? ''),
+        interventionExplanation: identical(interventionExplanation, _unset)
+            ? this.interventionExplanation
+            : (interventionExplanation as String? ?? ''),
+        timerSeconds: identical(timerSeconds, _unset)
+            ? this.timerSeconds
+            : timerSeconds as int?,
       );
 
   /// Lossless, escaped JSON (fixes the old hand-rolled, un-escaped serializer).
   String toJson() => jsonEncode({
-        'v': 1,
+        'v': 3,
         'start': start.toIso8601String(),
         'stepsCompleted': stepsCompleted,
         'anchorNoteId': anchorNoteId,
@@ -108,6 +136,10 @@ class WorkoutSessionState {
         'scorePct': scorePct,
         'scoreMatched': scoreMatched,
         'scoreMissed': scoreMissed,
+        'promptQuestion': promptQuestion,
+        'promptCue': promptCue,
+        'interventionExplanation': interventionExplanation,
+        'timerSeconds': timerSeconds,
       });
 
   /// Parses an autosaved blob; returns null for anything malformed/missing.
@@ -116,7 +148,7 @@ class WorkoutSessionState {
     try {
       final m = jsonDecode(json) as Map<String, dynamic>;
       final v = m['v'];
-      if (v != 1) return null; // unknown schema — caller falls back to fresh state
+      if (v != 1 && v != 2 && v != 3) return null; // unknown schema — caller falls back to fresh state
       final required = ['v', 'start', 'stepsCompleted', 'anchorTitle'];
       if (!required.every((k) => m.containsKey(k))) return null;
       return WorkoutSessionState(
@@ -135,6 +167,10 @@ class WorkoutSessionState {
         scoreMissed: ((m['scoreMissed'] as List?) ?? const [])
             .map((e) => e as String)
             .toList(),
+        promptQuestion: m['promptQuestion'] as String? ?? '',
+        promptCue: m['promptCue'] as String? ?? '',
+        interventionExplanation: m['interventionExplanation'] as String? ?? '',
+        timerSeconds: (m['timerSeconds'] as num?)?.toInt(),
       );
     } catch (e, st) {
       // Catch ALL errors (TypeError, CastError, FormatException, etc.) — a

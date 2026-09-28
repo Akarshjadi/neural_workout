@@ -5,6 +5,7 @@ import '../models/daily_checkin.dart';
 import '../models/note.dart';
 import '../models/session.dart';
 
+/// Behavioral recall-speed trend (behavioral proxy, not cholinergic measurement).
 class CognitiveSpeedResult {
   final double currentMs;
   final double slopePerDay;
@@ -26,6 +27,7 @@ class CognitiveSpeedResult {
   };
 }
 
+/// Self-reported recovery index (behavioral proxy, not BDNF measurement).
 class RecoveryReserveResult {
   final double index0to100;
   final bool isLearning;
@@ -41,6 +43,7 @@ class RecoveryReserveResult {
   };
 }
 
+/// Behavioral challenge calibration proxy (behavioral proxy, not neurochemical measurement).
 class DifficultyResult {
   final double index0to100;
   final String detail;
@@ -59,6 +62,7 @@ class DifficultyResult {
   };
 }
 
+/// Graph connectivity density proxy (behavioral proxy, not physiological connectome).
 class NetworkResult {
   final double index0to100;
   final int linked;
@@ -80,6 +84,7 @@ class NetworkResult {
   };
 }
 
+/// Self-directed focus priming consistency (behavioral proxy, not neural state monitoring).
 class MindfulnessResult {
   final double index0to100;
   final bool isLearning;
@@ -103,7 +108,8 @@ class PlasticityProfile {
   final NetworkResult network;
   final MindfulnessResult mindfulness;
   final double overall0to100;
-  
+  final String disclaimer;
+
   const PlasticityProfile({
     required this.speed,
     required this.recovery,
@@ -111,6 +117,8 @@ class PlasticityProfile {
     required this.network,
     required this.mindfulness,
     required this.overall0to100,
+    this.disclaimer =
+        'Behavioral proxies only. Not physiological measurements. Correlations are observational.',
   });
 
   Map<String, dynamic> toJson() => {
@@ -120,13 +128,14 @@ class PlasticityProfile {
     'network': network.toJson(),
     'mindfulness': mindfulness.toJson(),
     'overall0to100': overall0to100,
+    'disclaimer': disclaimer,
   };
 }
 
-/// Neuroplasticity profile — five behavioral proxies grounded in 2025–2026 research.
+/// Behavioral adaptivity profile service — five behavioral proxies grounded in 2025–2026 research.
 class PlasticityService {
   const PlasticityService();
-  /// 1. Cholinergic plasticity proxy (McGill 2026, GeroScience). 
+  /// 1. Behavioral recall-speed trend (behavioral proxy, not cholinergic measurement). 
   CognitiveSpeedResult cognitiveSpeed(List<BlurtScore> blurts, {DateTime? now}) {
     final refDate = now ?? DateTime.now();
     final cutoff = refDate.subtract(const Duration(days: 30));
@@ -155,14 +164,17 @@ class PlasticityService {
       num += (days[i] - meanDay) * (smoothed[i] - meanMs);
       den += (days[i] - meanDay) * (days[i] - meanDay);
     }
-    double slope = den == 0 ? 0 : num / den;
+    final double slope = den == 0 ? 0 : num / den;
     String trend = 'stable';
-    if (slope < -10) trend = 'sharpening'; 
-    else if (slope > 10) trend = 'slowing';
+    if (slope < -10) {
+      trend = 'sharpening';
+    } else if (slope > 10) {
+      trend = 'slowing';
+    }
     return CognitiveSpeedResult(currentMs: smoothed.last, slopePerDay: slope, trend: trend, isLearning: uniqueDays < 7);
   }
 
-  /// 2. Recovery Reserve proxy (Frontiers in Human Neuroscience 2024, Sleep & Consolidation).
+  /// 2. Self-reported recovery index (behavioral proxy, not BDNF measurement).
   RecoveryReserveResult recoveryReserve(List<DailyCheckin> checkins, {DateTime? now}) {
     final refDate = now ?? DateTime.now();
     final cutoff = refDate.subtract(const Duration(days: 7));
@@ -176,7 +188,7 @@ class PlasticityService {
     return RecoveryReserveResult(index0to100: totalWeighted / recent.length, isLearning: uniqueDays < 7);
   }
 
-  /// 3. Desirable Difficulty Index (Wilson 2019, Nature Communications "The Eighty Five Percent Rule").
+  /// 3. Behavioral challenge calibration proxy (behavioral proxy, not neurochemical measurement).
   DifficultyResult desirableDifficulty(List<BlurtScore> blurts, List<Map<String,dynamic>> reviews, {DateTime? now}) {
     final refDate = now ?? DateTime.now();
     final cutoff = refDate.subtract(const Duration(days: 7));
@@ -196,16 +208,16 @@ class PlasticityService {
     
     double accScore = 0;
     if (recentBlurts.isNotEmpty) {
-      double avgAcc = recentBlurts.map((b) => b.scorePct).reduce((a, b) => a + b) / recentBlurts.length;
+      final double avgAcc = recentBlurts.map((b) => b.scorePct).reduce((a, b) => a + b) / recentBlurts.length;
       accScore = (100 - ((avgAcc - 0.775).abs() * (100 / 0.225))).clamp(0.0, 100.0);
     }
     double ratingScore = 0, interleaveScore = 0;
     if (recentReviews.isNotEmpty) {
-      int hardAgain = recentReviews.where((r) => r['rating'] == 'hard' || r['rating'] == 'again').length;
-      double mix = hardAgain / recentReviews.length;
+      final int hardAgain = recentReviews.where((r) => r['rating'] == 'hard' || r['rating'] == 'again').length;
+      final double mix = hardAgain / recentReviews.length;
       ratingScore = (100 - ((mix - 0.35).abs() * (100 / 0.65))).clamp(0.0, 100.0);
-      int inter = recentReviews.where((r) => r['wasInterleaved'] == true).length;
-      double interPerDay = inter / max(1, uniqueReviewDays.length);
+      final int inter = recentReviews.where((r) => r['wasInterleaved'] == true).length;
+      final double interPerDay = inter / max(1, uniqueReviewDays.length);
       interleaveScore = ((interPerDay / 3.0) * 100).clamp(0.0, 100.0);
     }
     double index = 0;
@@ -217,37 +229,42 @@ class PlasticityService {
       index = (ratingScore * 0.7) + (interleaveScore * 0.3);
     }
     String detail = 'balanced';
-    double avgAcc = recentBlurts.isNotEmpty ? recentBlurts.map((b) => b.scorePct).reduce((a, b) => a + b) / recentBlurts.length : 0;
+    final double avgAcc = recentBlurts.isNotEmpty ? recentBlurts.map((b) => b.scorePct).reduce((a, b) => a + b) / recentBlurts.length : 0;
     if (recentBlurts.isNotEmpty) {
-      if (avgAcc > 0.90) detail = 'too easy';
-      else if (avgAcc < 0.60) detail = 'too hard';
+      if (avgAcc > 0.90) {
+        detail = 'too easy';
+      } else if (avgAcc < 0.60) {
+        detail = 'too hard';
+      }
     } else if (recentReviews.isNotEmpty) {
       // If we only have reviews to go on
-      if (ratingScore < 30) detail = 'too hard';
+      if (ratingScore < 30) {
+        detail = 'too hard';
+      }
     }
     return DifficultyResult(index0to100: index, detail: detail, isLearning: isLearning);
   }
-  /// 4. Network Integration (Network Neuroscience 2025, Semantic Graph Processing).
+  /// 4. Graph connectivity density proxy (behavioral proxy, not physiological connectome).
   NetworkResult networkIntegration(List<Note> notes, Map<int,int> linkCounts) {
     if (notes.isEmpty) return const NetworkResult(index0to100: 0, linked: 0, total: 0, components: 0);
-    int linked = notes.where((n) => (linkCounts[n.id] ?? 0) > 0).length;
-    double ratio = linked / notes.length;
-    double avgLinks = linkCounts.values.fold(0, (a, b) => a + b) / notes.length;
-    int components = (linked > 0) ? (notes.length - linked + 1) : 0; 
-    double sc = (ratio * 50) + (min(avgLinks, 5.0) / 5.0 * 50);
+    final int linked = notes.where((n) => (linkCounts[n.id] ?? 0) > 0).length;
+    final double ratio = linked / notes.length;
+    final double avgLinks = linkCounts.values.fold(0, (a, b) => a + b) / notes.length;
+    final int components = (linked > 0) ? (notes.length - linked + 1) : 0; 
+    final double sc = (ratio * 50) + (min(avgLinks, 5.0) / 5.0 * 50);
     return NetworkResult(
       index0to100: sc.clamp(0.0, 100.0), linked: linked, total: notes.length, components: components,
     );
   }
 
-  /// 5. Mindfulness Priming (Journal of Cognitive Enhancement 2026).
+  /// 5. Self-directed focus priming consistency (behavioral proxy, not neural state monitoring).
   MindfulnessResult mindfulness(List<Session> sessions, {DateTime? now}) {
     final refDate = now ?? DateTime.now();
     final cutoff = refDate.subtract(const Duration(days: 30));
     final recent = sessions.where((s) => s.date.isAfter(cutoff)).toList();
     if (recent.isEmpty) return const MindfulnessResult(index0to100: 0, isLearning: true);
     final uniqueDays = recent.map((s) => "${s.date.year}-${s.date.month}-${s.date.day}").toSet().length;
-    int primed = recent.where((s) => s.focusPrimed).length;
+    final int primed = recent.where((s) => s.focusPrimed).length;
     return MindfulnessResult(
       index0to100: (primed / recent.length) * 100.0,
       isLearning: uniqueDays < 7,
@@ -270,7 +287,7 @@ class PlasticityService {
     final m = mindfulness(sessions, now: now);
     double speedSc = 100 - ((s.currentMs - 500) / 4500 * 100);
     speedSc = speedSc.clamp(0.0, 100.0);
-    double over = (speedSc * 0.20) + (r.index0to100 * 0.20) + (d.index0to100 * 0.25) + 
+    final double over = (speedSc * 0.20) + (r.index0to100 * 0.20) + (d.index0to100 * 0.25) + 
                   (n.index0to100 * 0.25) + (m.index0to100 * 0.10);             
     return PlasticityProfile(
       speed: s, recovery: r, difficulty: d, network: n, mindfulness: m, overall0to100: over.clamp(0.0, 100.0),

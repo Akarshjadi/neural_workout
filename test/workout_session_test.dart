@@ -60,9 +60,28 @@ void main() {
       expect(WorkoutSessionState.fromJson('{"foo":1}'), isNull);
     });
 
-    test('unknown schema version returns null (version check)', () {
-      // A session with v=2 should be rejected since we only support v=1.
+    test('v1 blob parses', () {
+      final json = '{"v":1,"start":"2026-09-09T09:00:00.000","stepsCompleted":0,"anchorTitle":"x"}';
+      final w = WorkoutSessionState.fromJson(json);
+      expect(w, isNotNull);
+      expect(w!.stepsCompleted, 0);
+    });
+
+    test('v2 blob parses', () {
       final json = '{"v":2,"start":"2026-09-09T09:00:00.000","stepsCompleted":0,"anchorTitle":"x"}';
+      final w = WorkoutSessionState.fromJson(json);
+      expect(w, isNotNull);
+    });
+
+    test('v3 blob parses', () {
+      final json = '{"v":3,"start":"2026-09-09T09:00:00.000","stepsCompleted":0,"anchorTitle":"x"}';
+      final w = WorkoutSessionState.fromJson(json);
+      expect(w, isNotNull);
+    });
+
+    test('unknown schema version returns null (version check)', () {
+      // A session with v=999 is not supported and must return null.
+      final json = '{"v":999,"start":"2026-09-09T09:00:00.000","stepsCompleted":0,"anchorTitle":"x"}';
       expect(WorkoutSessionState.fromJson(json), isNull);
     });
 

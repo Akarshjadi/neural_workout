@@ -92,6 +92,7 @@ class CognitionEngine {
   /// Neuroplasticity proxy: novelty load + desirable difficulty + retrieval
   /// practice + consistency + recovery. All five are real levers research
   /// links to synapse remodelling (LTP, BDNF, sleep consolidation).
+  @Deprecated('Forecast total not surfaced — use the factor decomposition to avoid a fourth composite score')
   MetricForecast neuroForecast({
     required List<Note> notes,
     required List<Session> sessions,
@@ -121,6 +122,7 @@ class CognitionEngine {
   /// Focus proxy: depth (uninterrupted time), retrieval fluency (recall
   /// speed), step completion, interleave fit. Interleaving helps *learning*
   /// but too much of it fragments focus, so we target ~3 interleaves/session.
+  @Deprecated('Forecast total not surfaced — use the factor decomposition to avoid a fourth composite score')
   MetricForecast focusForecast({
     required List<Session> sessions,
     required List<BlurtScore> blurts,
@@ -141,6 +143,7 @@ class CognitionEngine {
   /// Memory-power proxy: mean retrievability on review days, stability
   /// proxy from blurt depth, and accuracy. Uses FSRS ratings as the source
   /// of truth for retrievability — no self-report.
+  @Deprecated('Forecast total not surfaced — use the factor decomposition to avoid a fourth composite score')
   MetricForecast memoryForecast({
     required List<BlurtScore> blurts,
     required List<Map<String, dynamic>> reviews,
@@ -270,7 +273,7 @@ class CognitionEngine {
         weekMinutes.map((m) => math.pow(m - mean, 2)).reduce((a, b) => a + b) /
         7;
     final std = math.sqrt(variance);
-    final consistency = (1 - (std / 20).clamp(0.0, 1.0));
+    final consistency = mean == 0 ? 0.0 : (1 - (std / 20).clamp(0.0, 1.0));
 
     // Recovery: breaks in the last 7 days, saturating at 7.
     final weekBreaks = breaks

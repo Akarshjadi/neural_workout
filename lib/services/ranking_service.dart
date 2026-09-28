@@ -9,11 +9,10 @@ class RankingService {
   static const double masteredDepth = 80;
   static const double masteredClarity = 80;
 
-  /// Returns 0-100 aggregate score across all metrics.
+  /// Returns 0-100 aggregate evidence score across retrieval, retention, links, and pathways.
   ///
-  /// [linkCounts] is a map of noteId -> number of links for that note.
-  /// [totalReviews] and [retrievableReviews] compute real retention from FSRS data.
-  double overallScore({
+  /// AI-only depth/clarity terms are excluded and renormalized into accuracy when AI is disabled.
+  double evidenceScore({
     required List<BlurtScore> blurts,
     required List<Note> notes,
     required List<PathwayRecord> pathways,
@@ -27,8 +26,9 @@ class RankingService {
 
     final depths = blurts.map((b) => b.depthScore).whereType<double>().toList();
     final clarities = blurts.map((b) => b.clarityScore).whereType<double>().toList();
-    final avgDepth = depths.isEmpty ? 0.0 : depths.reduce((a, b) => a + b) / depths.length;
-    final avgClarity = clarities.isEmpty ? 0.0 : clarities.reduce((a, b) => a + b) / clarities.length;
+    final hasAi = depths.isNotEmpty && clarities.isNotEmpty;
+    final avgDepth = hasAi ? depths.reduce((a, b) => a + b) / depths.length : 0.0;
+    final avgClarity = hasAi ? clarities.reduce((a, b) => a + b) / clarities.length : 0.0;
 
     // Cross-link density: % of notes that have at least one link.
     // A well-organized knowledge base has most nodes connected, not all nodes
@@ -60,23 +60,53 @@ class RankingService {
             return a + (count / 5 * 100);
           }) / weekRecs.length;
 
-    // Weighted average: renormalize when totalReviews == 0 to keep 0..100 scale.
-    final weighted = totalReviews == 0
-        ? accuracy * 0.40 +
-            retentionScore * 0.0 +
-            avgDepth * 0.20 +
-            avgClarity * 0.15 +
-            crossLinkScore * 0.125 +
-            pathwayScore * 0.125
-        : accuracy * 0.30 +
-            retentionScore * 0.25 +
-            avgDepth * 0.15 +
-            avgClarity * 0.10 +
-            crossLinkScore * 0.10 +
-            pathwayScore * 0.10;
+    // Weighted average: renormalize when AI is disabled or when totalReviews == 0.
+    double weighted;
+    if (hasAi) {
+      weighted = totalReviews == 0
+          ? accuracy * 0.40 +
+              avgDepth * 0.20 +
+              avgClarity * 0.15 +
+              crossLinkScore * 0.125 +
+              pathwayScore * 0.125
+          : accuracy * 0.30 +
+              retentionScore * 0.25 +
+              avgDepth * 0.15 +
+              avgClarity * 0.10 +
+              crossLinkScore * 0.10 +
+              pathwayScore * 0.10;
+    } else {
+      weighted = totalReviews == 0
+          ? accuracy * 0.75 +
+              crossLinkScore * 0.125 +
+              pathwayScore * 0.125
+          : accuracy * 0.55 +
+              retentionScore * 0.25 +
+              crossLinkScore * 0.10 +
+              pathwayScore * 0.10;
+    }
 
     return weighted.clamp(0, 100);
   }
+
+  /// @Deprecated('Renamed to evidenceScore to avoid competing overall brain scores')
+  @Deprecated('Renamed to evidenceScore to avoid competing overall brain scores')
+  double overallScore({
+    required List<BlurtScore> blurts,
+    required List<Note> notes,
+    required List<PathwayRecord> pathways,
+    required Map<int, int> linkCounts,
+    int totalReviews = 0,
+    int retrievableReviews = 0,
+  }) =>
+      evidenceScore(
+        blurts: blurts,
+        notes: notes,
+        pathways: pathways,
+        linkCounts: linkCounts,
+        totalReviews: totalReviews,
+        retrievableReviews: retrievableReviews,
+      );
 
   /// Returns weakest 3 areas as strings, for suggestions.
   List<String> weakestAreas({

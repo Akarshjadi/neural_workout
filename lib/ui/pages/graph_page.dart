@@ -16,7 +16,6 @@ class _GraphPageState extends State<GraphPage> {
   List<LayoutNode> _nodes = [];
   List<LayoutEdge> _edges = [];
   Map<int, double> _opacities = {};
-  
   bool _ready = false;
 
   @override
@@ -31,7 +30,7 @@ class _GraphPageState extends State<GraphPage> {
   void _layout() {
     final state = context.read<AppState>();
     final notes = state.notes;
-    final links = state.db.allLinks; // getter, not method
+    final links = state.db.allLinks;
     final linkCounts = state.db.linkCountsByNote();
     
     _nodes = [];
@@ -42,13 +41,12 @@ class _GraphPageState extends State<GraphPage> {
     
     for (final n in notes) {
       final c = linkCounts[n.id] ?? 0;
-      final rad = 10 + (math.sqrt(c) * 5); // sqrt(linkCount)
-      _nodes.add(LayoutNode(n.id, radius: rad, x: 200 + r.nextDouble() * 200, y: 200 + r.nextDouble() * 200));
+      final rad = 8.0 + (math.sqrt(c) * 4.5);
+      _nodes.add(LayoutNode(n.id, radius: rad, x: 180 + r.nextDouble() * 180, y: 180 + r.nextDouble() * 260));
       
-      // opacity by recency (naively mapping using updatedAt for now)
       final daysOld = DateTime.now().difference(n.updatedAt).inDays;
-      double op = 1.0 - (daysOld / 30);
-      _opacities[n.id] = op.clamp(0.2, 1.0);
+      final double op = 1.0 - (daysOld / 30);
+      _opacities[n.id] = op.clamp(0.25, 1.0);
     }
     
     for (final l in links) {
@@ -57,37 +55,39 @@ class _GraphPageState extends State<GraphPage> {
       }
     }
     
-    ForceLayout.simulate(_nodes, _edges, width: 400, height: 600, iterations: 100);
+    ForceLayout.simulate(_nodes, _edges, width: 380, height: 500, iterations: 100);
     setState(() {});
   }
 
   void _onTapNode(LayoutNode node) async {
     final state = context.read<AppState>();
-    
     if (state.activeSession == null) {
       await state.startSession('Review individual card', anchorNoteId: node.id);
     } else {
       state.activeWorkout = state.activeWorkout?.copyWith(anchorNoteId: node.id);
     }
-    
-    // Trigger CardPage navigation (index 5)
     state.triggerPage(5);
   }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 48.0),
+      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Spacer(),
-          Text('BRAIN BLOOM', style: Theme.of(context).textTheme.labelSmall),
-          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('KNOWLEDGE TOPOLOGY', style: Theme.of(context).textTheme.labelSmall),
+              Text('${_nodes.length} CONCEPTS | ${_edges.length} LINKS',
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 8.5, color: NotebookTheme.oxblood, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const SizedBox(height: 8),
           const Divider(color: NotebookTheme.graphite, height: 1, thickness: 1),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           Expanded(
-            flex: 5,
             child: InteractiveViewer(
               child: GestureDetector(
                 onTapUp: (details) {
@@ -95,7 +95,7 @@ class _GraphPageState extends State<GraphPage> {
                   for (final n in _nodes) {
                     final dx = n.x - pos.dx;
                     final dy = n.y - pos.dy;
-                    if (math.sqrt(dx * dx + dy * dy) <= n.radius) {
+                    if (math.sqrt(dx * dx + dy * dy) <= n.radius + 6) {
                       _onTapNode(n);
                       break;
                     }
@@ -129,7 +129,6 @@ class _GraphPainter extends CustomPainter {
       ..color = NotebookTheme.graphite.withValues(alpha: 0.15)
       ..style = PaintingStyle.stroke;
       
-      
     for (final e in edges) {
       final s = nodes.firstWhere((n) => n.id == e.source, orElse: () => LayoutNode(-1));
       final t = nodes.firstWhere((n) => n.id == e.target, orElse: () => LayoutNode(-1));
@@ -156,3 +155,4 @@ class _GraphPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _GraphPainter old) => true;
 }
+

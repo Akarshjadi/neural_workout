@@ -26,7 +26,30 @@ import '../models/break_record.dart';
 import '../services/break_service.dart';
 import '../services/strategy_profile_service.dart';
 import '../models/daily_checkin.dart';
+import '../models/capability.dart';
+import '../services/capability_engine.dart';
 import '../services/plasticity_service.dart';
+import '../models/delayed_outcome.dart';
+import '../models/error_record.dart';
+import '../models/feedback_record.dart';
+import '../models/focus_integrity.dart';
+import '../models/intervention.dart';
+import '../models/knowledge_evidence.dart';
+import '../models/learning_attempt.dart';
+import '../models/learning_enums.dart';
+import '../services/adaptive_intervention_service.dart';
+import '../services/ai_scaffolding_service.dart';
+import '../services/cognition_engine.dart';
+import '../services/context_focus_service.dart';
+import '../services/delayed_outcome_service.dart';
+import '../services/experiment_service.dart';
+import '../services/feedback_diagnosis_service.dart';
+import '../services/learning_curve_service.dart';
+import '../services/research_catalog.dart';
+import '../services/retrieval_engine.dart';
+import '../services/session_policy_engine.dart';
+
+import '../widgets/visuals/multidimensional_evidence_profile.dart';
 
 class AppState extends ChangeNotifier {
   final AppDatabase db;
@@ -38,6 +61,17 @@ class AppState extends ChangeNotifier {
   final MetricsService metricsSvc = MetricsService();
   final RankingService rankingSvc = RankingService();
 
+  /// Cognitive Learning Services
+  final SessionPolicyEngine sessionPolicy = const SessionPolicyEngine();
+  final RetrievalEngine retrievalEngine = const RetrievalEngine();
+  final FeedbackDiagnosisService feedbackService = const FeedbackDiagnosisService();
+  final AdaptiveInterventionService adaptiveIntervention = const AdaptiveInterventionService();
+  final AiScaffoldingService aiScaffolding = const AiScaffoldingService();
+  final DelayedOutcomeService delayedOutcomeSvc = const DelayedOutcomeService();
+  final ContextFocusService contextFocusSvc = const ContextFocusService();
+  final ExperimentService experimentSvc = const ExperimentService();
+  final LearningCurveService learningCurveSvc = const LearningCurveService();
+
   /// Phase 6 — Notifications & suggestions.
   final NotificationService notificationSvc = NotificationService();
   final SuggestionService suggestionSvc = SuggestionService();
@@ -48,8 +82,15 @@ class AppState extends ChangeNotifier {
   /// Phase 1 — User toggle for AI scoring (persisted in settings).
   bool aiEnabled = true;
 
-  /// Phase 5 — Cached overall score.
+  /// Phase 5 — Cached evidence score.
   double _overallScore = 0;
+
+  /// Single aggregate evidence score across retrieval, retention, links, and pathways.
+  double get evidenceScore => _overallScore;
+
+  /// @Deprecated('Renamed to evidenceScore')
+  @Deprecated('Renamed to evidenceScore')
+  double get overallScore => _overallScore;
 
   /// Phase 6 — Cached suggestions.
   List<String> _suggestions = [];
@@ -91,6 +132,19 @@ class AppState extends ChangeNotifier {
     return _plasticityProfileCache!;
   }
 
+  List<CognitiveFactor>? _todayNeuroFactorsCache;
+
+  /// Decomposed contributing cognitive factors for today's practice context (read-only diagnostic).
+  List<CognitiveFactor> get todayNeuroFactors {
+    _todayNeuroFactorsCache ??= CognitionEngine(today: DateTime.now()).neuroFactorsFor(
+      notes: notes,
+      sessions: db.allSessions(),
+      blurts: blurtScores,
+      reviews: db.reviewHistory(),
+      breaks: _breaks,
+    );
+    return _todayNeuroFactorsCache!;
+  }
 
   StrategyProfile? _strategyProfileCache;
 
@@ -114,6 +168,119 @@ class AppState extends ChangeNotifier {
     }
     return _strategyProfileCache;
   }
+
+  List<LearningAttempt> get learningAttempts => db.allAttempts();
+  List<ErrorRecord> get errorRecords => db.allErrors();
+  List<DelayedOutcome> get delayedOutcomes => db.allDelayedOutcomes();
+  ResearchCatalog get researchCatalog => ResearchCatalog();
+
+  /// Item 34 — recurring error families in the last 14 days, worst first.
+  /// Empty when nothing has repeated; a one-off mistake is not a pattern.
+  List<({ErrorType type, int count})> get recurringErrors =>
+      FeedbackDiagnosisService.recurringErrors(errorRecords);
+
+  /// Item 33 — targets where correction appears to have overshot (pass ->
+  /// confident failure -> confidence collapse). Consumed by the Back Cover.
+  List<int> get hyperCorrectedTargets =>
+      FeedbackDiagnosisService.hyperCorrectedTargets(learningAttempts);
+
+  Future<void> logErrorRecord({
+    required String conceptId,
+    required ErrorType errorType,
+    required String attemptId,
+    required String userResponse,
+    required String expectedResponse,
+  }) async {
+    final attId = int.tryParse(attemptId) ?? 0;
+    final record = ErrorRecord(
+      id: 0,
+      attemptId: attId,
+      type: errorType,
+      source: DiagnosisSource.user,
+      evidence: 'User self-diagnosis: ${errorType.label}',
+      createdAt: DateTime.now(),
+    );
+    await db.insertError(record);
+    notifyListeners();
+  }
+
+
+  List<EvidenceProfileDimension> get evidenceProfileDimensions {
+    final attempts = learningAttempts;
+    final blurts = blurtScores;
+    
+    // 1. Retrieval
+    double retrievalVal = 0.5;
+    if (blurts.isNotEmpty) {
+      final avg = blurts.map((b) => b.scorePct).reduce((a, b) => a + b) / blurts.length;
+      retrievalVal = (avg / 100.0).clamp(0.1, 1.0);
+    } else if (attempts.isNotEmpty) {
+      final valid = attempts.where((a) => !a.scorePct.isNaN);
+      if (valid.isNotEmpty) {
+        retrievalVal = (valid.map((a) => a.scorePct).reduce((a, b) => a + b) / valid.length / 100.0).clamp(0.1, 1.0);
+      }
+    }
+
+    // 2. Retention
+    double retentionVal = 0.5;
+    if (delayedOutcomes.isNotEmpty) {
+      final retained = delayedOutcomes.where((o) => o.correctness == Correctness.correct || o.correctness == Correctness.partiallyCorrect).length;
+      retentionVal = (retained / delayedOutcomes.length).clamp(0.1, 1.0);
+    } else if (notes.isNotEmpty) {
+      final avgStab = notes.map((n) => n.card.stability ?? 1.0).reduce((a, b) => a + b) / notes.length;
+      retentionVal = (avgStab / 30.0).clamp(0.1, 1.0);
+    }
+
+    // 3. Transfer
+    final links = db.allLinks;
+    final double transferVal = (links.length / (notes.isNotEmpty ? notes.length * 1.5 : 1.0)).clamp(0.1, 1.0);
+
+    // 4. Application
+    double applicationVal = (attempts.where((a) => a.testType == TestType.application || a.testType == TestType.transfer).length / (attempts.isNotEmpty ? attempts.length : 1)).clamp(0.1, 1.0);
+    if (applicationVal < 0.2) applicationVal = 0.4;
+
+    // 5. Calibration
+    double calibVal = 0.7;
+    final calibAttempts = attempts.where((a) => a.confidence != null && !a.scorePct.isNaN);
+    if (calibAttempts.isNotEmpty) {
+      double totalErr = 0.0;
+      for (final a in calibAttempts) {
+        totalErr += (a.confidence! - a.scorePct).abs();
+      }
+      final meanErr = totalErr / calibAttempts.length;
+      calibVal = (1.0 - (meanErr / 100.0)).clamp(0.1, 1.0);
+    }
+
+    // 6. Error Recovery
+    double recoveryVal = 0.6;
+    if (errorRecords.isNotEmpty) {
+      recoveryVal = 0.75;
+    }
+
+    // 7. Efficiency
+    double efficiencyVal = 0.7;
+    if (blurts.isNotEmpty) {
+      final validSpeeds = blurts.map((b) => b.recallSpeedMs ?? 15000).toList();
+      final avgSpeed = validSpeeds.reduce((a, b) => a + b) / validSpeeds.length;
+      efficiencyVal = (1.0 - (avgSpeed / 60000.0)).clamp(0.2, 1.0);
+    }
+
+    // 8. Consistency
+    final streak = todayReport()['streak'] as int? ?? 1;
+    final double consistencyVal = (streak / 14.0).clamp(0.2, 1.0);
+
+    return [
+      EvidenceProfileDimension(label: 'Retrieval', value: retrievalVal, detail: '${(retrievalVal * 100).round()}% free & cued accuracy'),
+      EvidenceProfileDimension(label: 'Retention', value: retentionVal, detail: '${(retentionVal * 100).round()}% delayed consolidation'),
+      EvidenceProfileDimension(label: 'Transfer', value: transferVal, detail: '${links.length} cross-domain connections'),
+      EvidenceProfileDimension(label: 'Application', value: applicationVal, detail: 'Contextual synthesis rate'),
+      EvidenceProfileDimension(label: 'Calibration', value: calibVal, detail: '${(calibVal * 100).round()}% metacognitive alignment'),
+      EvidenceProfileDimension(label: 'Error Rec', value: recoveryVal, detail: '${errorRecords.length} systematic corrections'),
+      EvidenceProfileDimension(label: 'Efficiency', value: efficiencyVal, detail: 'Retrieval latency stability'),
+      EvidenceProfileDimension(label: 'Consistency', value: consistencyVal, detail: '$streak-day session discipline'),
+    ];
+  }
+
 
   BreakStatus get breakStatus => breakSvc.computeStatus(records: _breaks, now: DateTime.now());
 
@@ -210,6 +377,7 @@ class AppState extends ChangeNotifier {
     _loadSynonymAliases();
 
     // Phase 1 — Load AI toggle and init AI scorer.
+    ResearchCatalog.ensureInitialized();
     aiEnabled = (db.getSetting('ai_enabled') ?? 'true') == 'true';
     try {
       await _initAiScorer();
@@ -400,9 +568,11 @@ class AppState extends ChangeNotifier {
   void _refreshAnalytics() {
     _strategyProfileCache = null;
     _plasticityProfileCache = null;
+    _todayNeuroFactorsCache = null;
+    _notesDueForDelayedTestCache = null;
     final linkCounts = db.linkCountsByNote();
     final reviewStats = computeReviewStats(db);
-    _overallScore = rankingSvc.overallScore(
+    _overallScore = rankingSvc.evidenceScore(
       blurts: blurtScores,
       notes: notes,
       pathways: pathwayRecords,
@@ -410,7 +580,10 @@ class AppState extends ChangeNotifier {
       totalReviews: reviewStats.total,
       retrievableReviews: reviewStats.retrievable,
     );
-    _suggestions = suggestionSvc.generateSuggestions(this);
+    final evidenceSugg = suggestionSvc.generateEvidenceSuggestions(this);
+    final regularSugg = suggestionSvc.generateSuggestions(this);
+    final combined = [...evidenceSugg, ...regularSugg];
+    _suggestions = combined.toSet().take(2).toList();
   }
 
   /// Compute review statistics for retention metric.
@@ -437,10 +610,65 @@ class AppState extends ChangeNotifier {
     }
     completedRecently = false;
     final now = DateTime.now();
+
+    // Phase 7: error-shaped session prompts. When anchorNoteId is set and
+    // planStep produces a non-baseline intervention, surface the shaped
+    // prompt (question, cue, why) and pacing timer on the fresh workout.
+    String promptQ = '';
+    String promptC = '';
+    String why = '';
+    int? timerSecs;
+    if (anchorNoteId != null) {
+      final note = notes.where((n) => n.id == anchorNoteId).firstOrNull;
+      if (note != null) {
+        final attempts = db.attemptsForTarget(anchorNoteId);
+        final errors = <ErrorRecord>[];
+        for (final a in attempts) {
+          errors.addAll(db.errorsForAttempt(a.id));
+        }
+        final delayedOutcomes = db.delayedOutcomesForTarget(anchorNoteId);
+        final evidence = db.summarizeKnowledgeEvidence(anchorNoteId);
+
+        // Auto-pick contrast: the note with the most links to anchorNoteId.
+        int? contrastId;
+        final adjacency = <int, int>{};
+        for (final link in db.allLinks) {
+          if (link.fromNoteId != null && link.fromNoteId == anchorNoteId && link.toNoteId != null) {
+            adjacency[link.toNoteId!] = (adjacency[link.toNoteId!] ?? 0) + 1;
+          } else if (link.toNoteId != null && link.toNoteId == anchorNoteId && link.fromNoteId != null) {
+            adjacency[link.fromNoteId!] = (adjacency[link.fromNoteId!] ?? 0) + 1;
+          }
+        }
+        final sorted = adjacency.entries.toList()
+          ..sort((a, b) => b.value.compareTo(a.value));
+        if (sorted.isNotEmpty) contrastId = sorted.first.key;
+
+        final step = sessionPolicy.planStep(
+          note: note,
+          noteAttempts: attempts,
+          noteErrors: errors,
+          noteDelayedOutcomes: delayedOutcomes,
+          knowledgeEvidence: evidence,
+          contrastNote: contrastId != null
+              ? notes.where((n) => n.id == contrastId).firstOrNull
+              : null,
+          now: now,
+        );
+        promptQ = step.prompt.question;
+        promptC = step.prompt.contextCue;
+        why = step.intervention.explanation;
+        timerSecs = step.thresholds['timer_seconds'];
+      }
+    }
+
     final w = WorkoutSessionState(
       start: now,
       anchorNoteId: anchorNoteId,
       anchorTitle: anchorTitle,
+      promptQuestion: promptQ,
+      promptCue: promptC,
+      interventionExplanation: why,
+      timerSeconds: timerSecs,
     );
     final id = await db.insertSession(
       Session(
@@ -603,7 +831,12 @@ class AppState extends ChangeNotifier {
   /// Step 2 · Blurt: capture text, score against the note chosen by id first
   /// (authoritative anchor; the old title-match silently swapped in an
   /// unrelated first note — issues #3/#7).
-  Future<BlurtScore?> finishBlurt({Note? source, int? recallSpeedMs}) async {
+  Future<BlurtScore?> finishBlurt({
+    Note? source,
+    int? recallSpeedMs,
+    double? confidenceJudgement,
+    ScaffoldingLevel? scaffoldingLevel,
+  }) async {
     final w = activeWorkout;
     if (w == null) return null;
     var resolved = source;
@@ -619,6 +852,8 @@ class AppState extends ChangeNotifier {
         resolved,
         w.blurtText,
         recallSpeedMs: recallSpeedMs,
+        confidenceJudgement: confidenceJudgement,
+        scaffoldingLevel: scaffoldingLevel,
       );
     } else if (w.blurtText.isNotEmpty) {
       // resolved == null here → cold start: the blur seeds the Zettelkasten.
@@ -638,6 +873,8 @@ class AppState extends ChangeNotifier {
             created,
             w.blurtText,
             recallSpeedMs: recallSpeedMs,
+            confidenceJudgement: confidenceJudgement,
+            scaffoldingLevel: scaffoldingLevel,
           );
         }
       }
@@ -655,6 +892,7 @@ class AppState extends ChangeNotifier {
     await advanceStep();
     return bs;
   }
+
 
   /// Step 4 · Cheat Sheet: fold the condensed summary into the anchor note
   /// rather than creating a duplicate-titled note (issue 17). Falls back to a
@@ -768,6 +1006,8 @@ class AppState extends ChangeNotifier {
     Note source,
     String blurt, {
     int? recallSpeedMs,
+    double? confidenceJudgement,
+    ScaffoldingLevel? scaffoldingLevel,
   }) async {
     ScoreResult r;
     if (isAiAvailable) {
@@ -802,23 +1042,231 @@ class AppState extends ChangeNotifier {
       clarityScore: r.clarityScore,
     );
     await db.insertBlurtScore(bs);
+
+    // Additive Cognitive Evidence Recording (Phase 1/2)
+    final attempt = LearningAttempt(
+      id: 0,
+      timestamp: bs.date,
+      knowledgeTargetId: source.id,
+      testType: TestType.freeRecall,
+      response: blurt,
+      correctness: Correctness.fromScorePct(bs.scorePct),
+      scorePct: bs.scorePct,
+      responseTimeMs: recallSpeedMs,
+      confidence: confidenceJudgement != null ? (confidenceJudgement * 100).round() : null,
+      extras: scaffoldingLevel != null ? {'scaffolding': scaffoldingLevel.name} : const {},
+    );
+    final attemptId = await db.insertAttempt(attempt);
+
+    final fb = feedbackService.generateFeedback(
+      attemptId: attemptId,
+      response: blurt,
+      expectedPoints: source.body.split('\n').where((l) => l.trim().isNotEmpty).toList(),
+      customScore: bs.scorePct,
+      fromAi: isAiAvailable,
+    );
+    await db.insertFeedback(fb);
+
+    if (attempt.correctness.isFail) {
+      final errorType = feedbackService.diagnoseError(
+        response: blurt,
+        scorePct: bs.scorePct,
+        responseTimeMs: recallSpeedMs,
+        confidence: attempt.confidence,
+      );
+      if (errorType != ErrorType.unknown) {
+        await db.insertError(ErrorRecord(
+          id: 0,
+          attemptId: attemptId,
+          type: errorType,
+          source: DiagnosisSource.deterministic,
+          confidence: 1.0,
+          evidence: 'auto: score ${bs.scorePct.toStringAsFixed(0)}%',
+          createdAt: DateTime.now(),
+        ));
+      }
+    }
+
     blurtScores = db.allBlurtScores();
     _refreshAnalytics();
     notifyListeners();
     return bs;
   }
 
+
   // ── Review (FSRS) ──────────────────────────────────────
+  /// Reviews [n] with [rating] in FSRS and logs attempt evidence.
+  ///
+  /// A review of note B during a session anchored on note A is interleaved practice.
   Future<void> reviewNote(
     Note n,
     Rating rating, {
-    bool interleaved = false,
+    bool? interleaved,
   }) async {
+    final effectiveInterleaved = interleaved ??
+        (activeWorkout != null &&
+            activeWorkout!.anchorNoteId != null &&
+            activeWorkout!.anchorNoteId != n.id);
     final result = fsrs.review(n.card, rating);
     await db.updateNote(n.copyWith(card: result.card));
-    await db.insertReview(n.id, rating, wasInterleaved: interleaved);
+    await db.insertReview(n.id, rating, wasInterleaved: effectiveInterleaved);
+
+    // Additive Cognitive Evidence Recording (Phase 1/2)
+    final correctness = rating == Rating.again
+        ? Correctness.incorrect
+        : (rating == Rating.hard ? Correctness.partiallyCorrect : Correctness.correct);
+    final scorePct = rating == Rating.again ? 0.0 : (rating == Rating.hard ? 50.0 : 100.0);
+
+    final attempt = LearningAttempt(
+      id: 0,
+      timestamp: DateTime.now(),
+      knowledgeTargetId: n.id,
+      testType: TestType.cuedRecall,
+      correctness: correctness,
+      scorePct: scorePct,
+      wasInterleaved: effectiveInterleaved,
+    );
+    await db.insertAttempt(attempt);
+
     await _reloadNotes();
   }
+
+  // ── Cognitive Learning Engine APIs ─────────────────────
+  Future<int> recordAttempt(LearningAttempt attempt) async {
+    final id = await db.insertAttempt(attempt);
+    notifyListeners();
+    return id;
+  }
+
+  Future<int> recordFeedback(FeedbackRecord feedback) async {
+    final id = await db.insertFeedback(feedback);
+    notifyListeners();
+    return id;
+  }
+
+  Future<int> recordError(ErrorRecord error) async {
+    final id = await db.insertError(error);
+    notifyListeners();
+    return id;
+  }
+
+  Future<int> recordDelayedOutcome(DelayedOutcome outcome) async {
+    final id = await db.insertDelayedOutcome(outcome);
+    notifyListeners();
+    return id;
+  }
+
+  Future<int> recordIntervention(Intervention intervention) async {
+    final id = await db.insertIntervention(intervention);
+    notifyListeners();
+    return id;
+  }
+
+  /// Plans and records a recommended intervention for [noteId] based on current evidence.
+  Future<int> planAndRecordIntervention(int noteId) async {
+    final evidence = db.summarizeKnowledgeEvidence(noteId);
+    final attempts = db.attemptsForTarget(noteId);
+    final errors = <ErrorRecord>[];
+    for (final a in attempts) {
+      errors.addAll(db.errorsForAttempt(a.id));
+    }
+    final conceptType = db.conceptTypeFor(noteId);
+    final linkCounts = db.linkCountsByNote();
+    final contrastTargetId = linkCounts[noteId] != null
+        ? db.allLinks
+            .where((l) => l.fromNoteId == noteId || l.toNoteId == noteId)
+            .map((l) => l.fromNoteId == noteId ? l.toNoteId : l.fromNoteId)
+            .whereType<int>()
+            .firstOrNull
+        : null;
+    final empirical = empiricalMatches;
+    final intervention = adaptiveIntervention.decideIntervention(
+      targetId: noteId,
+      targetAttempts: attempts,
+      targetErrors: errors,
+      knowledgeState: evidence.state,
+      conceptType: conceptType,
+      contrastTargetId: contrastTargetId,
+      empiricalMatches: empirical,
+    );
+    final id = await db.insertIntervention(intervention);
+    notifyListeners();
+    return id;
+  }
+
+  KnowledgeEvidence getKnowledgeEvidence(int noteId) {
+    return db.summarizeKnowledgeEvidence(noteId);
+  }
+
+  /// Assesses capability for a note based on its durable knowledge evidence.
+  Capability capabilityFor(int noteId) {
+    final ev = db.summarizeKnowledgeEvidence(noteId);
+    final cType = db.conceptTypeFor(noteId);
+    return const CapabilityEngine().assess(
+      ev,
+      totalNotesInGraph: notes.length,
+      conceptType: cType,
+    );
+  }
+
+  /// Empirical intervention-to-concept matches computed from personal experiment history.
+  List<InterventionConceptMatch> get empiricalMatches {
+    final conceptMap = <int, ConceptType>{
+      for (final n in notes) n.id: db.conceptTypeFor(n.id),
+    };
+    final eff = const ExperimentService().effectivenessByConceptType(
+      attempts: db.allAttempts(),
+      delayedOutcomes: db.allDelayedOutcomes(),
+      interventions: db.allInterventions(),
+      conceptTypeByNote: conceptMap,
+    );
+    final matches = <InterventionConceptMatch>[];
+    for (final entry in eff.entries) {
+      if (entry.key >= 0 && entry.key < ConceptType.values.length) {
+        final cType = ConceptType.values[entry.key];
+        matches.add(InterventionConceptMatch(
+          action: InterventionAction.retrieve,
+          conceptType: cType,
+          meanDelayedScore: entry.value,
+          sampleSize: 3,
+        ));
+      }
+    }
+    return matches;
+  }
+
+  List<int>? _notesDueForDelayedTestCache;
+
+  /// IDs of notes that are empirically due for a delayed outcome retention test.
+  List<int> get notesDueForDelayedTest {
+    if (_notesDueForDelayedTestCache == null) {
+      final out = <int>[];
+      for (final note in notes) {
+        final attempts = db.attemptsForTarget(note.id);
+        if (attempts.isEmpty) continue;
+        final outcomes = db.delayedOutcomesForTarget(note.id);
+        final due = delayedOutcomeSvc.isDueForDelayedTest(
+          sourceAttempt: attempts.last,
+          existingOutcomes: outcomes,
+          now: DateTime.now(),
+        );
+        if (due) out.add(note.id);
+      }
+      _notesDueForDelayedTestCache = out;
+    }
+    return _notesDueForDelayedTestCache!;
+  }
+
+  Future<void> recordFocus(FocusIntegrity f) async {
+    await db.upsertFocus(f);
+    notifyListeners();
+  }
+
+  FocusIntegrity? getFocus(int sessionId) {
+    return db.focusForSession(sessionId);
+  }
+
+
 
   // ── Dashboard helpers ──────────────────────────────────
   List<Note> get dueNotesList =>
@@ -982,7 +1430,6 @@ class AppState extends ChangeNotifier {
   );
 
   // ── Phase 5 — Ranking ───────────────────────────────────
-  double getOverallScore() => _overallScore;
 
   List<String> getWeakestAreas() {
     final linkCounts = db.linkCountsByNote();

@@ -1,4 +1,11 @@
+import 'dart:math' as math;
 import '../models/capability.dart';
+import '../models/knowledge_evidence.dart';
+import '../models/learning_enums.dart';
+import 'adaptive_intervention_service.dart';
+
+@Deprecated('Research reference only — not called at runtime')
+const String researchPrompt = capabilityArchitectureEnginePrompt;
 
 const String capabilityArchitectureEnginePrompt = r'''
 # PERSONAL CAPABILITY ARCHITECTURE ENGINE
@@ -146,12 +153,112 @@ FINAL PRINCIPLE: Do not optimize the person's score. Optimize the person's capab
 ''';
 
 class CapabilityEngine {
+  const CapabilityEngine();
+
   /// The system prompt instructing the AI on how to assess capabilities.
-  String get systemPrompt => capabilityArchitectureEnginePrompt;
+  @Deprecated('Research reference only — not called at runtime')
+  String get systemPrompt => researchPrompt;
+
+  @Deprecated('Research reference only — not called at runtime')
+  String get researchPrompt => capabilityArchitectureEnginePrompt;
 
   /// Given a raw JSON map holding a measured capability element, 
   /// parse it into our [Capability] data structure.
   Capability parseCapability(Map<String, dynamic> json) {
     return Capability.fromJson(json);
+  }
+
+  /// Assesses capability for a concept node directly from its [KnowledgeEvidence]
+  /// purely with deterministic domain rules and zero LLM calls.
+  Capability assess(
+    KnowledgeEvidence evidence, {
+    int totalNotesInGraph = 1,
+    ConceptType? conceptType,
+  }) {
+    final ev = evidence.evidence;
+    if (evidence.state == KnowledgeState.unknown && ev.totalAttempts == 0) {
+      return const Capability();
+    }
+
+    final behavioralEvidence = <String>[];
+    if (ev.retrievalAttempts > 0) {
+      behavioralEvidence.add('${ev.retrievalSuccesses}/${ev.retrievalAttempts} retrieval successes');
+    }
+    if (ev.applicationAttempts > 0) {
+      behavioralEvidence.add('${ev.applicationSuccesses}/${ev.applicationAttempts} application successes');
+    }
+    if (ev.delayedAttempts > 0) {
+      behavioralEvidence.add('${ev.delayedSuccesses}/${ev.delayedAttempts} delayed successes');
+    }
+    if (ev.transferAttempts > 0) {
+      behavioralEvidence.add('${ev.transferSuccesses}/${ev.transferAttempts} transfer successes');
+    }
+
+    final testResults = <String>[];
+    if (ev.retrievalAttempts > 0) {
+      testResults.add('Retrieval: ${ev.retrievalSuccesses}/${ev.retrievalAttempts}');
+    }
+    if (ev.applicationAttempts > 0) {
+      testResults.add('Application: ${ev.applicationSuccesses}/${ev.applicationAttempts}');
+    }
+    if (ev.transferAttempts > 0) {
+      testResults.add('Transfer: ${ev.transferSuccesses}/${ev.transferAttempts}');
+    }
+    if (ev.explanationAttempts > 0) {
+      testResults.add('Explanation: ${ev.explanationAttempts} attempts');
+    }
+
+    final double? retrievalAcc = ev.retrievalAccuracy;
+    final double? applicationAcc = ev.applicationAttempts > 0 ? (ev.applicationSuccesses / ev.applicationAttempts) : null;
+    final double? delayedAcc = ev.delayedAttempts > 0 ? (ev.delayedSuccesses / ev.delayedAttempts) : null;
+
+    double weightedSum = 0.0;
+    double totalWeight = 0.0;
+    if (retrievalAcc != null) {
+      weightedSum += 0.4 * (retrievalAcc * 100);
+      totalWeight += 0.4;
+    }
+    if (applicationAcc != null) {
+      weightedSum += 0.3 * (applicationAcc * 100);
+      totalWeight += 0.3;
+    }
+    if (delayedAcc != null) {
+      weightedSum += 0.3 * (delayedAcc * 100);
+      totalWeight += 0.3;
+    }
+
+    final double? score = totalWeight > 0 ? (weightedSum / totalWeight) : null;
+
+    final contradictions = <String>[];
+    final meanErr = ev.meanCalibrationError;
+    if (meanErr != null && meanErr > 20) {
+      contradictions.add('overconfident by ${meanErr.toStringAsFixed(0)}pts');
+    } else if (meanErr != null && meanErr < -20) {
+      contradictions.add('underconfident by ${(-meanErr).toStringAsFixed(0)}pts');
+    }
+
+    final double bottleneckImpact = ev.dependents / math.max(1, totalNotesInGraph);
+
+    final interventions = <String>[];
+    if (conceptType != null) {
+      final match = const AdaptiveInterventionService().matchByConceptType(
+        targetId: evidence.knowledgeTargetId,
+        conceptType: conceptType,
+      );
+      interventions.add(match.action.name);
+    }
+
+    return Capability(
+      selfRating: null,
+      behavioralEvidence: behavioralEvidence,
+      testResults: testResults,
+      evidenceQuality: evidence.confidence * 100,
+      confidence: evidence.confidence * 100,
+      score: score,
+      contradictions: contradictions,
+      bottleneckImpact: bottleneckImpact,
+      interventions: interventions,
+      historicalScores: const [],
+    );
   }
 }

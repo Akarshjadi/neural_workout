@@ -157,5 +157,48 @@ void main() {
       // while a gets 0 for retention.
       expect(a, lessThan(b));
     });
+
+    test('identical blurts with AI on vs off differs by less than 2 points', () {
+      final now = DateTime.now();
+      final blurtAiOn = BlurtScore(
+        id: 1,
+        noteId: 1,
+        noteTitle: 'T',
+        date: now,
+        scorePct: 80,
+        matched: ['a', 'b'],
+        missed: [],
+        depthScore: 80,
+        clarityScore: 80,
+      );
+
+      final blurtAiOff = BlurtScore(
+        id: 1,
+        noteId: 1,
+        noteTitle: 'T',
+        date: now,
+        scorePct: 80,
+        matched: ['a', 'b'],
+        missed: [],
+        depthScore: null,
+        clarityScore: null,
+      );
+
+      final scoreOn = rankingSvc.evidenceScore(
+        blurts: [blurtAiOn],
+        notes: [],
+        pathways: [],
+        linkCounts: {},
+      );
+
+      final scoreOff = rankingSvc.evidenceScore(
+        blurts: [blurtAiOff],
+        notes: [],
+        pathways: [],
+        linkCounts: {},
+      );
+
+      expect((scoreOn - scoreOff).abs(), lessThan(2.0));
+    });
   });
 }

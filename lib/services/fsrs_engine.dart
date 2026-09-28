@@ -43,4 +43,14 @@ class FsrsEngine {
     if (interval.inHours < 24) return 'in ${interval.inHours}h';
     return 'in ${interval.inDays}d';
   }
+
+  /// Alias for retrieving stability from [card].
+  double computeStability(Card card) => card.stability ?? 0.0;
+
+  /// Alias for [review] returning updated card and review interval.
+  ({Card card, Duration interval, Rating rating}) calculateNextReview(
+    Card card,
+    Rating rating,
+  ) =>
+      review(card, rating);
 }

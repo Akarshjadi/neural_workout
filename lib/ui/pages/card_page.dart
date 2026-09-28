@@ -12,34 +12,37 @@ class CardPage extends StatelessWidget {
     final state = context.watch<AppState>();
     final anchorId = state.activeSession?.anchorNoteId;
     final note = anchorId != null ? state.notes.where((n) => n.id == anchorId).firstOrNull : null;
+    final cap = note != null ? state.capabilityFor(note.id) : null;
 
     if (note == null) {
       return Padding(
         padding: const EdgeInsets.all(24.0),
         child: Center(
-          child: Text('No active card.', style: Theme.of(context).textTheme.bodyLarge),
+          child: Text('No active card selected.', style: Theme.of(context).textTheme.bodyLarge),
         ),
       );
     }
 
-    final dueStr = '${note.card.due.year}-${note.card.due.month.toString().padLeft(2, '0')}-${note.card.due.day.toString().padLeft(2, '0')}';
+    final dueDays = note.card.due.difference(DateTime.now()).inDays;
     final stabilityStr = note.card.stability?.toStringAsFixed(1) ?? '0.0';
+    final diffStr = note.card.difficulty?.toStringAsFixed(1) ?? '5.0';
 
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('INDEX CARD', style: Theme.of(context).textTheme.labelSmall),
-              Text('DUE: $dueStr', style: Theme.of(context).textTheme.labelSmall),
+              Text('EVIDENCE CARD', style: Theme.of(context).textTheme.labelSmall),
+              Text(dueDays <= 0 ? 'DUE NOW' : 'HORIZON: +${dueDays}d',
+                  style: TextStyle(fontFamily: 'monospace', fontSize: 9, fontWeight: FontWeight.bold, color: dueDays <= 0 ? NotebookTheme.oxblood : NotebookTheme.graphite)),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           const Divider(color: NotebookTheme.graphite, height: 1, thickness: 1),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Expanded(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -50,37 +53,43 @@ class CardPage extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(note.title, style: Theme.of(context).textTheme.headlineSmall),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         Text(note.body, style: Theme.of(context).textTheme.bodyLarge),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
-                Container(width: 1, color: NotebookTheme.graphite.withValues(alpha: 0.3)),
-                const SizedBox(width: 16),
+                const SizedBox(width: 12),
+                Container(width: 1, color: NotebookTheme.graphite.withValues(alpha: 0.2)),
+                const SizedBox(width: 12),
                 SizedBox(
-                  width: 80,
+                  width: 84,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('STABILITY', style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 10)),
-                      const SizedBox(height: 4),
-                      Text(stabilityStr, style: const TextStyle(fontFamily: 'monospace', fontSize: 18, color: NotebookTheme.ink)),
-                      const Spacer(),
-                      // Absorbed optional step reminders
-                      Text('Link', style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 14)),
-                      Text('Teach', style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 14)),
-                      Text('Cheat sheet', style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 14)),
+                      Text('STABILITY', style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 8)),
+                      Text('${stabilityStr}d', style: const TextStyle(fontFamily: 'monospace', fontSize: 16, fontWeight: FontWeight.bold, color: NotebookTheme.oxblood)),
+                      const SizedBox(height: 10),
+                      Text('DIFFICULTY', style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 8)),
+                      Text('$diffStr / 10', style: const TextStyle(fontFamily: 'monospace', fontSize: 13, color: NotebookTheme.ink)),
+                      const SizedBox(height: 10),
+                      Text('STATE', style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 8)),
+                      Text(note.card.state.name.toUpperCase(), style: const TextStyle(fontFamily: 'monospace', fontSize: 11, color: NotebookTheme.ink)),
+                      if (cap != null) ...[
+                        const SizedBox(height: 10),
+                        Text('CAPABILITY', style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 8)),
+                        Text(cap.score != null ? '${cap.score!.toStringAsFixed(0)}%' : '—', style: const TextStyle(fontFamily: 'monospace', fontSize: 13, fontWeight: FontWeight.bold, color: NotebookTheme.ink)),
+                        Text(cap.confidence != null ? '${cap.confidence!.toStringAsFixed(0)}% conf' : 'no conf', style: const TextStyle(fontFamily: 'monospace', fontSize: 9, color: NotebookTheme.graphite)),
+                        Text(cap.contradictions.isEmpty ? 'no contradictions' : cap.contradictions.first, style: const TextStyle(fontFamily: 'monospace', fontSize: 8, color: NotebookTheme.oxblood), maxLines: 2, overflow: TextOverflow.ellipsis),
+                      ],
                     ],
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          const Divider(color: NotebookTheme.graphite, height: 1, thickness: 1),
-          const SizedBox(height: 16),
+          const Divider(color: NotebookTheme.graphite, height: 1, thickness: 0.8),
+          const SizedBox(height: 10),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -108,7 +117,7 @@ class _RateLink extends StatelessWidget {
       onTap: () {
         onTap();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Card rated.', style: TextStyle(fontFamily: 'monospace'))),
+          const SnackBar(content: Text('FSRS spacing updated.', style: TextStyle(fontFamily: 'monospace'))),
         );
       },
       child: Text(
@@ -122,3 +131,4 @@ class _RateLink extends StatelessWidget {
     );
   }
 }
+

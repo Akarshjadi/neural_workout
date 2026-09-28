@@ -19,7 +19,13 @@ class IndexPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('TABLE OF CONTENTS', style: Theme.of(context).textTheme.labelSmall),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('EVIDENCE INDEX', style: Theme.of(context).textTheme.labelSmall),
+              Text('${notes.length} CONCEPTS', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: NotebookTheme.oxblood)),
+            ],
+          ),
           const SizedBox(height: 16),
           const Divider(color: NotebookTheme.graphite, height: 1, thickness: 1),
           const SizedBox(height: 8),

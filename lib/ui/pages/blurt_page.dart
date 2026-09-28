@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:async';
+import '../../services/ai_scaffolding_service.dart';
 import '../../state/app_state.dart';
 import '../theme_notebook.dart';
+import '../../widgets/visuals/cue_gradient.dart';
+import '../../models/workout_session.dart';
 
 class BlurtPage extends StatefulWidget {
   const BlurtPage({super.key});
@@ -14,45 +17,23 @@ class _BlurtPageState extends State<BlurtPage> {
   final TextEditingController _ctrl = TextEditingController();
   final Stopwatch _stopwatch = Stopwatch();
   Timer? _timer;
-  
-  bool _showBreathing = true;
-  int _breathingSeconds = 300; // 5 minutes
+
+  final bool _showBreathing = false;
+  int _breathingSec = 30;
+  double _confidence = 0.75;
+  ScaffoldingLevel _scaffolding = ScaffoldingLevel.none;
 
   @override
   void initState() {
     super.initState();
-    // Start stopwatch only when breathing finishes or is skipped
-    // _timer is used for both breathing and stopwatch
-    _timer = Timer.periodic(const Duration(seconds: 1), _tick);
-  }
-
-  void _tick(Timer t) {
-    if (_showBreathing) {
-      setState(() {
-        if (_breathingSeconds > 0) {
-          _breathingSeconds--;
-        } else {
-          _finishBreathing();
-        }
-      });
-    } else {
-      setState(() {}); // repaint stopwatch
-    }
-  }
-
-  void _finishBreathing() {
-    setState(() {
-      _showBreathing = false;
-      context.read<AppState>().markFocusPrimed();
-      _stopwatch.start();
+    _timer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (_showBreathing && _breathingSec > 0) {
+        setState(() => _breathingSec--);
+      } else if (mounted) {
+        setState(() {});
+      }
     });
-  }
-
-  void _skipBreathing() {
-    setState(() {
-      _showBreathing = false;
-      _stopwatch.start();
-    });
+    _stopwatch.start();
   }
 
   @override
@@ -76,13 +57,8 @@ class _BlurtPageState extends State<BlurtPage> {
 
   void _finish(AppState state) async {
     if (_isConverting || _ctrl.text.trim().isEmpty) return;
-    
-    // Anticipation Phase (1.5s delay)
-    setState(() {
-      _isConverting = true;
-    });
-    
-    await Future.delayed(const Duration(milliseconds: 1500));
+    setState(() => _isConverting = true);
+    await Future.delayed(const Duration(milliseconds: 400));
 
     if (state.activeSession == null) {
       await state.startSession('Quick note');
@@ -90,54 +66,31 @@ class _BlurtPageState extends State<BlurtPage> {
     } else {
       state.activeWorkout = state.activeWorkout?.copyWith(blurtText: _ctrl.text);
     }
-    await state.finishBlurt(recallSpeedMs: _stopwatch.elapsedMilliseconds);
-    
+
+    await state.finishBlurt(
+      recallSpeedMs: _stopwatch.elapsedMilliseconds,
+      confidenceJudgement: _confidence,
+      scaffoldingLevel: _scaffolding,
+    );
+
     if (mounted) {
       setState(() => _isConverting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Blurt saved. Turn the page.', style: TextStyle(fontFamily: 'monospace'))),
+        const SnackBar(content: Text('Recall recorded. Turn page for contrast analysis.', style: TextStyle(fontFamily: 'monospace'))),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_showBreathing) {
-      final m = _breathingSeconds ~/ 60;
-      final s = (_breathingSeconds % 60).toString().padLeft(2, '0');
-      return Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const SizedBox(height: 48),
-            Text('MINDFULNESS PRIMING', style: Theme.of(context).textTheme.labelSmall),
-            const SizedBox(height: 16),
-            const Divider(color: NotebookTheme.graphite, height: 1, thickness: 1),
-            const Spacer(),
-            Text('$m:$s', style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontFamily: 'monospace'), textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            Text('Breathe deeply to prime executive control.', style: Theme.of(context).textTheme.bodyMedium, textAlign: TextAlign.center),
-            const Spacer(),
-            ElevatedButton(
-              onPressed: _skipBreathing,
-              style: ElevatedButton.styleFrom(backgroundColor: NotebookTheme.paper, foregroundColor: NotebookTheme.graphite, elevation: 0),
-              child: const Text('SKIP'),
-            ),
-            const SizedBox(height: 48),
-          ],
-        ),
-      );
-    }
-
     if (_isConverting) {
       return const Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             CircularProgressIndicator(color: NotebookTheme.oxblood),
-            SizedBox(height: 24),
-            Text('Synthesizing...', style: TextStyle(fontFamily: 'monospace', color: NotebookTheme.graphite)),
+            SizedBox(height: 16),
+            Text('Analyzing semantic recall...', style: TextStyle(fontFamily: 'monospace', fontSize: 11, color: NotebookTheme.graphite)),
           ],
         ),
       );
@@ -147,35 +100,137 @@ class _BlurtPageState extends State<BlurtPage> {
     final elapsed = _stopwatch.elapsed;
     final mm = elapsed.inMinutes.toString().padLeft(2, '0');
     final ss = (elapsed.inSeconds % 60).toString().padLeft(2, '0');
+    final w = state.activeWorkout;
+    final hasPrompt = w != null && w.promptQuestion.isNotEmpty;
 
     return Padding(
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text('$mm:$ss', style: Theme.of(context).textTheme.labelSmall),
-              TextButton(
-                onPressed: () => _finish(state),
-                child: const Text('Done'),
-              ),
-            ],
+          _buildHeader(context, mm, ss, w),
+          const SizedBox(height: 6),
+          CueGradientWidget(
+            currentLevel: _scaffolding,
+            onLevelSelected: (lvl) => setState(() => _scaffolding = lvl),
           ),
-          const Divider(color: NotebookTheme.graphite, height: 1, thickness: 1),
-          Expanded(
-            child: TextField(
-              controller: _ctrl,
-              expands: true,
-              maxLines: null,
-              style: Theme.of(context).textTheme.bodyLarge,
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                hintText: 'Start writing...',
-              ),
+          const SizedBox(height: 6),
+          _buildConfidenceRow(),
+          const Divider(color: NotebookTheme.graphite, height: 1, thickness: 0.8),
+          if (hasPrompt) _buildPromptShape(context, w),
+          _buildTextField(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, String mm, String ss, WorkoutSessionState? w) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        Text('RECALL FIELD  [$mm:$ss]', style: Theme.of(context).textTheme.labelSmall),
+        const Spacer(),
+        if (w?.timerSeconds != null)
+          Text(
+            'PACED: ${w!.timerSeconds}s metronome',
+            style: const TextStyle(
+              fontFamily: 'monospace',
+              fontSize: 8.5,
+              color: NotebookTheme.oxblood,
+              fontWeight: FontWeight.bold,
             ),
           ),
+        TextButton(
+          onPressed: () => _finish(context.read<AppState>()),
+          child: const Text('Commit recall →'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildConfidenceRow() {
+    return Row(
+      children: [
+        Text('CONFIDENCE: ${(_confidence * 100).round()}%', style: const TextStyle(fontFamily: 'monospace', fontSize: 8.5, color: NotebookTheme.graphite)),
+        Expanded(
+          child: Slider(
+            value: _confidence,
+            min: 0.0,
+            max: 1.0,
+            divisions: 10,
+            activeColor: NotebookTheme.oxblood,
+            inactiveColor: NotebookTheme.graphite.withValues(alpha: 0.2),
+            onChanged: (v) => setState(() => _confidence = v),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPromptShape(BuildContext context, WorkoutSessionState w) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        border: Border.all(color: NotebookTheme.oxblood.withValues(alpha: 0.3)),
+        color: NotebookTheme.paper,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'PROMPT SHAPE',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 8.5),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            w.promptQuestion,
+            style: const TextStyle(
+              fontFamily: 'Georgia',
+              fontSize: 14,
+              color: NotebookTheme.ink,
+            ),
+          ),
+          if (w.promptCue.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              w.promptCue,
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                fontSize: 10,
+                color: NotebookTheme.graphite,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
+          if (w.interventionExplanation.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              'why: ${w.interventionExplanation}',
+              style: const TextStyle(
+                fontFamily: 'Georgia',
+                fontSize: 10,
+                color: NotebookTheme.graphite,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildTextField(BuildContext context) {
+    return Expanded(
+      child: TextField(
+        controller: _ctrl,
+        expands: true,
+        maxLines: null,
+        style: Theme.of(context).textTheme.bodyLarge,
+        decoration: const InputDecoration(
+          border: InputBorder.none,
+          hintText: 'Reconstruct concepts from memory without looking at notes...',
+          hintStyle: TextStyle(fontFamily: 'Georgia', fontStyle: FontStyle.italic, color: NotebookTheme.graphite, fontSize: 13),
+        ),
       ),
     );
   }

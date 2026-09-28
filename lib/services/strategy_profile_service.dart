@@ -89,11 +89,11 @@ class StrategyProfileService {
     for (final c in linkCounts.values) {
       if (c > 0) linkedNotes++;
     }
-    double crossLinkScore = notes.isNotEmpty
+    final double crossLinkScore = notes.isNotEmpty
         ? (linkedNotes / notes.length * 100).clamp(0.0, 100.0)
         : 0.0;
     
-    double elaboration = (avgDepth * 0.5 + crossLinkScore * 0.5).clamp(0.0, 100.0);
+    final double elaboration = (avgDepth * 0.5 + crossLinkScore * 0.5).clamp(0.0, 100.0);
     final elaborationEv = notes.isEmpty
         ? 'No notes to elaborate on'
         : 'AI depth ${avgDepth.toStringAsFixed(0)} & ${crossLinkScore.toStringAsFixed(0)}% linked';

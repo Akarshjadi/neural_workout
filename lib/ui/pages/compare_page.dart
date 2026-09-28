@@ -1,10 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../models/error_record.dart';
 import '../../state/app_state.dart';
 import '../theme_notebook.dart';
 
-class ComparePage extends StatelessWidget {
+class ComparePage extends StatefulWidget {
   const ComparePage({super.key});
+
+  @override
+  State<ComparePage> createState() => _ComparePageState();
+}
+
+class _ComparePageState extends State<ComparePage> {
+  ErrorType? _selectedError;
 
   @override
   Widget build(BuildContext context) {
@@ -15,10 +23,7 @@ class ComparePage extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.all(24.0),
         child: Center(
-          child: Text(
-            'Complete a blurt first.',
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
+          child: Text('Complete a recall session first.', style: Theme.of(context).textTheme.bodyLarge),
         ),
       );
     }
@@ -28,87 +33,94 @@ class ComparePage extends StatelessWidget {
     final missed = w.scoreMissed;
     final blurtText = w.blurtText;
 
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('COMPARISON', style: Theme.of(context).textTheme.labelSmall),
-              Text('$scoreStr%', style: const TextStyle(fontFamily: 'monospace', fontSize: 36, color: NotebookTheme.ink)),
+              Text('CONTRAST & CORRECTION', style: Theme.of(context).textTheme.labelSmall),
+              Text('$scoreStr% RETRIEVED', style: const TextStyle(fontFamily: 'monospace', fontSize: 16, fontWeight: FontWeight.bold, color: NotebookTheme.oxblood)),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           const Divider(color: NotebookTheme.graphite, height: 1, thickness: 1),
-          const SizedBox(height: 16),
-          Text(
-            state.plasticityProfile.difficulty.detail == 'balanced' 
-                ? 'This was in the desirable-difficulty band' 
-                : 'Try again in a few hours',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(fontFamily: 'monospace', color: NotebookTheme.oxblood),
-          ),
-          const SizedBox(height: 16),
-          Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Left: Blurt
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Text(
-                      blurtText.isEmpty ? '(Empty blurt)' : blurtText,
-                      style: Theme.of(context).textTheme.bodyLarge,
-                    ),
+          const SizedBox(height: 10),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 5,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(border: Border.all(color: NotebookTheme.graphite.withValues(alpha: 0.2))),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('RECALL TRACE', style: TextStyle(fontFamily: 'monospace', fontSize: 8.5, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Text(blurtText.isEmpty ? '(Empty)' : blurtText, style: const TextStyle(fontFamily: 'Georgia', fontSize: 11.5)),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 16),
-                Container(width: 1, color: NotebookTheme.graphite.withValues(alpha: 0.3)),
-                const SizedBox(width: 16),
-                // Right: Source concepts
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('CONCEPTS', style: Theme.of(context).textTheme.labelSmall),
-                        const SizedBox(height: 8),
-                        for (final m in matched)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: Container(
-                              decoration: const BoxDecoration(
-                                border: Border(bottom: BorderSide(color: NotebookTheme.oxblood, width: 2)),
-                              ),
-                              child: Text(m, style: Theme.of(context).textTheme.bodyLarge),
-                            ),
-                          ),
-                        const SizedBox(height: 8),
-                        if (missed.isNotEmpty)
-                          Text('You missed:', style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
-                        for (final m in missed)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                border: Border.all(color: NotebookTheme.graphite, width: 1.5),
-                                borderRadius: BorderRadius.circular(20), // "circled in graphite" - using rounded border for circling effect
-                              ),
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              child: Text(m, style: Theme.of(context).textTheme.bodyLarge),
-                            ),
-                          ),
-                      ],
-                    ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 5,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(border: Border.all(color: NotebookTheme.graphite.withValues(alpha: 0.2))),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('KEYPOINTS', style: TextStyle(fontFamily: 'monospace', fontSize: 8.5, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      for (final m in matched)
+                        Text('✓ $m', style: const TextStyle(fontFamily: 'monospace', fontSize: 9.5, color: NotebookTheme.oxblood)),
+                      for (final m in missed)
+                        Text('✕ $m', style: const TextStyle(fontFamily: 'monospace', fontSize: 9.5, color: NotebookTheme.graphite, decoration: TextDecoration.lineThrough)),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+          const SizedBox(height: 14),
+          Text('ERROR TOPOLOGY SELF-DIAGNOSIS', style: Theme.of(context).textTheme.labelSmall?.copyWith(fontSize: 8.5)),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            children: [
+              for (final type in [ErrorType.factualRecallFailure, ErrorType.retrievalFailure, ErrorType.wrongMethod, ErrorType.conceptualMisunderstanding, ErrorType.confusedConcepts])
+                ChoiceChip(
+                  label: Text(type.name, style: const TextStyle(fontFamily: 'monospace', fontSize: 8)),
+                  selected: _selectedError == type,
+                  selectedColor: NotebookTheme.oxblood.withValues(alpha: 0.15),
+                  onSelected: (sel) {
+                    setState(() => _selectedError = sel ? type : null);
+                    if (sel) {
+                      state.logErrorRecord(
+                        conceptId: w.anchorNoteId?.toString() ?? 'c_${DateTime.now().millisecondsSinceEpoch}',
+                        errorType: type,
+                        attemptId: '${state.activeSession?.id ?? 0}',
+                        userResponse: blurtText,
+                        expectedResponse: matched.join(', '),
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error classified as ${type.name}.', style: const TextStyle(fontFamily: 'monospace'))),
+                      );
+                    }
+                  },
+                ),
+            ],
+          ),
+          const SizedBox(height: 48),
         ],
       ),
     );
   }
 }
+

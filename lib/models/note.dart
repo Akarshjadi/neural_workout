@@ -16,6 +16,7 @@ class Note {
   final DateTime createdAt;
   final DateTime updatedAt;
   final Card card; // FSRS per-card state (difficulty/stability/retrievability)
+  final List<int> linkIds;
 
   const Note({
     required this.id,
@@ -25,6 +26,7 @@ class Note {
     required this.createdAt,
     required this.updatedAt,
     required this.card,
+    this.linkIds = const [],
   });
 
   Note copyWith({
@@ -35,6 +37,7 @@ class Note {
     DateTime? createdAt,
     DateTime? updatedAt,
     Card? card,
+    List<int>? linkIds,
   }) {
     return Note(
       id: id ?? this.id,
@@ -44,6 +47,7 @@ class Note {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       card: card ?? this.card,
+      linkIds: linkIds ?? this.linkIds,
     );
   }
 

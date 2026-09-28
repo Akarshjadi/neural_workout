@@ -26,47 +26,28 @@ A personal spaced-repetition and cognitive-training app built with Flutter. Writ
 
 This app tracks 5 behavioral proxies grounded in 2025–2026 neuroscience research to evaluate adaptivity instead of just a raw score:
 
-1. **Cognitive Speed Index (Cholinergic proxy)**
-   - *Basis*: McGill 2026 (GeroScience) - speed-based training increasing cholinergic binding.
+1. **Cognitive Speed Trend (Behavioral proxy)**
+   - *Basis*: McGill 2026 (GeroScience) - speed-based training trends.
    - *Metric*: `recallSpeedMs` trend slope over trailing 30 days.
    - *Honest Limitation*: Recall speed is a behavioral proxy, not a physiological cholinergic measurement.
 
-2. **Recovery Reserve**
-   - *Basis*: BDNF via activity framework (2025 systematic review).
+2. **Recovery Reserve (Self-report proxy)**
+   - *Basis*: Activity and recovery framework (2025 systematic review).
    - *Metric*: Daily Check-in of Sleep, Energy, and Physical Activity.
-   - *Honest Limitation*: Self-report sleep/activity is not a physiological BDNF tracker.
+   - *Honest Limitation*: Self-report sleep/activity is a behavioral proxy, not a physiological BDNF measurement.
 
-3. **Desirable Difficulty Index**
-   - *Basis*: 2026 unified theory driving consolidation via effortful retrieval.
+3. **Desirable Difficulty Index (Challenge calibration proxy)**
+   - *Basis*: Unified theory driving consolidation via effortful retrieval.
    - *Metric*: Blurt accuracy (peak 77.5%), rating mix (peak ~35% hard/again), and review interleaving index.
-   
-4. **Network Integration**
-   - *Basis*: 2025 cognitive-training study tracking functional connectivity improvements.
+   - *Honest Limitation*: Challenge calibration is a behavioral proxy, not a direct neurochemical measurement.
+
+4. **Network Integration (Graph density proxy)**
+   - *Basis*: Cognitive-training research tracking concept association and graph density.
    - *Metric*: Note co-link clustering density and connected components.
-   
-5. **Mindfulness Priming**
-   - *Basis*: *npj Science of Learning* (2026) brief mindfulness to improve executive control.
+   - *Honest Limitation*: Concept linkage is a topological proxy, not a physical connectome measurement.
+
+5. **Mindfulness Priming (Focus habit proxy)**
+   - *Basis*: Brief mindfulness and focus priming consistency.
    - *Metric*: Pre-session 5-minute breathing execution rate over the trailing 30 days.
+   - *Honest Limitation*: Self-directed breathing execution is a behavioral habit proxy, not neural state monitoring.
 
-
-## Neuroplasticity Model
-
-This app tracks 5 behavioral proxies grounded in 2025–2026 neuroscience research to evaluate adaptivity instead of just a raw score:
-
-1. **Cognitive Speed Index (Cholinergic proxy)**
-   - *Basis*: McGill 2026 (GeroScience) - speed-based training increasing cholinergic binding.
-   - *Metric*: `recallSpeedMs` trend slope over trailing 30 days.
-   - *Honest Limitation*: Recall speed is a behavioral proxy, not a physiological cholinergic measurement.
-
-2. **Recovery Reserve**
-   - *Basis*: BDNF via activity framework (2025 systematic review).
-   - *Metric*: Daily Check-in of Sleep, Energy, and Physical Activity.
-   - *Honest Limitation*: Self-report sleep/activity is not a physiological BDNF tracker.
-
-3. **Desirable Difficulty Index**
-   - *Basis*: 2026 unified theory driving consolidation via effortful retrieval.
-   - *Metric*: Blurt accuracy (peak 77.5%), rating mix (peak ~35% hard/again), and review interleaving index.
-   
-4. **Network Integration**
-   - *Basis*: 2025 cognitive-train   - *Basis*: 2025 cogntio   - *Basis*: 2025 cognitive-train   - *Basis*: 2025 cogntio   - *Basis*: 2025 cognitive-train   - *Basis*: 2025 cogntio   - *Basis***
-   - *Basis*: *npj Science of Learning* (2026) bri   - *Basis*: *npj Science of Learning* (2026) bri   - *Basis*: *npj Science of Learning* (20ecution rate over the trailing 30 days.

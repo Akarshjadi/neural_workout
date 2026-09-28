@@ -3,7 +3,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_gemma/flutter_gemma_interface.dart';
 import 'package:flutter_gemma/core/message.dart';
 import 'package:flutter_gemma/core/model.dart';
+import '../models/error_record.dart';
+import '../models/learning_enums.dart';
+import '../models/note.dart';
 import 'blurt_scorer.dart';
+import 'feedback_diagnosis_service.dart';
+import 'retrieval_engine.dart';
 
 /// Phase 1 — Local on-device AI scorer using flutter_gemma.
 /// No cloud, no API keys. Falls back to BlurtScorer if anything fails.
@@ -140,5 +145,64 @@ $blurt
       return value.map((e) => e.toString()).toList();
     }
     return const [];
+  }
+
+  static const _stopWords = {
+    'this', 'that', 'with', 'from', 'have', 'were', 'which', 'their', 'there',
+    'about', 'would', 'could', 'should', 'these', 'other', 'words', 'into',
+    'more', 'some', 'than', 'them', 'then', 'what', 'when', 'will', 'your',
+  };
+
+  /// Deterministic tokenizer: extracts key concept terms without calling the model.
+  List<String> extractKeyConcepts(String body) {
+    final tokens = body
+        .toLowerCase()
+        .split(RegExp(r'[^a-z0-9]+'))
+        .where((t) => t.length > 3 && !_stopWords.contains(t))
+        .toSet()
+        .toList();
+    return tokens;
+  }
+
+  /// Alias: delegates prompt generation to RetrievalEngine.
+  Future<String> generatePrompt({
+    required Note note,
+    required TestType type,
+  }) async =>
+      const RetrievalEngine().generatePrompt(note: note, testType: type).question;
+
+  /// Alias: delegates error diagnosis to FeedbackDiagnosisService.
+  Future<ErrorType> diagnoseError({
+    required String response,
+    required double scorePct,
+    int? responseTimeMs,
+    int? confidence,
+  }) async =>
+      const FeedbackDiagnosisService().diagnoseError(
+        response: response,
+        scorePct: scorePct,
+        responseTimeMs: responseTimeMs,
+        confidence: confidence,
+      );
+
+  /// Scores explanation response against source text, returning score percentage.
+  Future<double> scoreExplanation({
+    required String response,
+    required String source,
+  }) async {
+    if (!_ready || _model == null) {
+      return BlurtScorer(sourceBody: source).score(response).scorePct;
+    }
+    final res = await score(sourceBody: source, blurt: response);
+    return res.scorePct;
+  }
+
+  /// Semantic vector search stub — throws because vector database is not included in build.
+  Future<List<Note>> semanticVectorSearch({
+    required String query,
+    required List<Note> candidates,
+  }) async {
+    // Doc claims vector search; not built. Throwing is honest.
+    throw UnimplementedError('no vector store in this build');
   }
 }

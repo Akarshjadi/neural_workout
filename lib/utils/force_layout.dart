@@ -69,9 +69,9 @@ class ForceLayout {
           if (n.id == e.target) targetNode = n;
         }
         if (sourceNode != null && targetNode != null) {
-          double dx = sourceNode.x - targetNode.x;
-          double dy = sourceNode.y - targetNode.y;
-          double dist = sqrt(dx * dx + dy * dy);
+          final double dx = sourceNode.x - targetNode.x;
+          final double dy = sourceNode.y - targetNode.y;
+          final double dist = sqrt(dx * dx + dy * dy);
           if (dist > 0) {
             final force = (dist * dist) / k * 0.005; // weak spring
             final mx = (dx / dist) * force;
@@ -86,9 +86,9 @@ class ForceLayout {
 
       // Gravity towards center + velocity application
       for (final n in nodes) {
-        double dx = cx - n.x;
-        double dy = cy - n.y;
-        double dist = sqrt(dx * dx + dy * dy);
+        final double dx = cx - n.x;
+        final double dy = cy - n.y;
+        final double dist = sqrt(dx * dx + dy * dy);
         if (dist > 0) {
           n.vx += (dx / dist) * (dist * 0.005);
           n.vy += (dy / dist) * (dist * 0.005);
@@ -130,5 +130,49 @@ class ForceLayout {
         }
       }
     }
+  }
+
+  /// Alias/helper: generates layout simulation with default dimensions.
+  static void generateLayout(
+    List<LayoutNode> nodes,
+    List<LayoutEdge> edges, {
+    double width = 800,
+    double height = 800,
+  }) =>
+      simulate(nodes, edges, width: width, height: height);
+
+  /// Clusters nodes into connected components using union-find over edges.
+  static List<List<int>> clusterNodes(
+    List<LayoutNode> nodes,
+    List<LayoutEdge> edges,
+  ) {
+    if (nodes.isEmpty) return [];
+    final parent = <int, int>{};
+    int find(int i) {
+      parent.putIfAbsent(i, () => i);
+      if (parent[i] == i) return i;
+      return parent[i] = find(parent[i]!);
+    }
+
+    void union(int i, int j) {
+      final rootI = find(i);
+      final rootJ = find(j);
+      if (rootI != rootJ) {
+        parent[rootI] = rootJ;
+      }
+    }
+
+    for (final n in nodes) {
+      parent[n.id] = n.id;
+    }
+    for (final e in edges) {
+      union(e.source, e.target);
+    }
+    final clusters = <int, List<int>>{};
+    for (final n in nodes) {
+      final root = find(n.id);
+      clusters.putIfAbsent(root, () => []).add(n.id);
+    }
+    return clusters.values.toList();
   }
 }

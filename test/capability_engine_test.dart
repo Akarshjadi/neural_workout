@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:neural_workout/models/capability.dart';
+import 'package:neural_workout/models/knowledge_evidence.dart';
 import 'package:neural_workout/services/capability_engine.dart';
 
 void main() {
@@ -76,6 +77,68 @@ void main() {
       expect(parsed.score, 85.5);
       expect(parsed.confidence, 70.0);
       expect(parsed.behavioralEvidence, ['Consistent execution']);
+    });
+
+    test('assess: empty evidence -> empty fields and null score', () {
+      const engine = CapabilityEngine();
+      const emptyEvidence = KnowledgeEvidence(
+        knowledgeTargetId: 1,
+        state: KnowledgeState.unknown,
+        evidence: EvidenceSummary(),
+        rationale: 'No evidence',
+        confidence: 0.0,
+      );
+
+      final cap = engine.assess(emptyEvidence);
+      expect(cap.score, isNull);
+      expect(cap.behavioralEvidence, isEmpty);
+      expect(cap.contradictions, isEmpty);
+    });
+
+    test('assess: rich evidence produces valid score in [60, 100] without NaN', () {
+      const engine = CapabilityEngine();
+      const richEvidence = KnowledgeEvidence(
+        knowledgeTargetId: 1,
+        state: KnowledgeState.verified,
+        evidence: EvidenceSummary(
+          retrievalAttempts: 5,
+          retrievalSuccesses: 5,
+          applicationAttempts: 2,
+          applicationSuccesses: 2,
+          delayedAttempts: 1,
+          delayedSuccesses: 1,
+          dependents: 3,
+        ),
+        rationale: 'Verified capability',
+        confidence: 0.85,
+      );
+
+      final cap = engine.assess(richEvidence, totalNotesInGraph: 10);
+      expect(cap.score, isNotNull);
+      expect(cap.score!, inInclusiveRange(60.0, 100.0));
+      expect(cap.score!.isNaN, isFalse);
+      expect(cap.confidence, 85.0);
+      expect(cap.behavioralEvidence, isNotEmpty);
+      expect(cap.bottleneckImpact, 0.3);
+    });
+
+    test('assess: calibration error > 20 produces overconfident contradiction', () {
+      const engine = CapabilityEngine();
+      const overconfEvidence = KnowledgeEvidence(
+        knowledgeTargetId: 1,
+        state: KnowledgeState.unstable,
+        evidence: EvidenceSummary(
+          retrievalAttempts: 4,
+          retrievalSuccesses: 1,
+          meanCalibrationError: 30.0,
+        ),
+        rationale: 'Overconfident',
+        confidence: 0.5,
+      );
+
+      final cap = engine.assess(overconfEvidence);
+      expect(cap.contradictions, isNotEmpty);
+      expect(cap.contradictions.first, contains('overconfident'));
     });
   });
 }
