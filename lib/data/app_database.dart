@@ -407,18 +407,27 @@ class AppDatabase {
   /// Idempotent via `meta` markers written by the caller. Legacy rows are the
   /// *origin* of all this evidence, so nothing is reinterpreted: a blurt stays
   /// a free recall, an FSRS review stays a cued recall with its rating grade.
+  static int _safeNextId(String b) {
+    final m = Hive.box('meta');
+    final c = m.get('seq_$b', defaultValue: 0) as int;
+    m.put('seq_$b', c + 1);
+    return c + 1;
+  }
+
   static int _backfillAttemptsFromBlurts() {
     final src = Hive.box(_bb);
     final dst = Hive.box(_ab);
     if (src.isEmpty) return 0;
     var n = 0;
-    for (final e in src.values) {
+    for (final key in src.keys) {
+      final e = src.get(key);
       if (e is! HiveBlurtScore) continue;
       final b = e;
       final ts = DateTime.tryParse(b.date ?? '') ?? DateTime.now();
       final pct = b.scorePct ?? 0.0;
-      dst.put(b.id ?? (n + 1), HiveAttempt()
-        ..id = b.id ?? (n + 1)
+      final freshId = _safeNextId(_ab);
+      dst.put(freshId, HiveAttempt()
+        ..id = freshId
         ..timestamp = ts.toIso8601String()
         ..knowledgeTargetId = b.noteId
         ..testType = 'freeRecall'
@@ -441,13 +450,14 @@ class AppDatabase {
     final src = Hive.box(_rb);
     final dst = Hive.box(_ab);
     var n = 0;
-    var nextId = 1000000; // separate id space: never collide with blurt ids
-    for (final e in src.values) {
+    for (final key in src.keys) {
+      final e = src.get(key);
       if (e is! HiveReview) continue;
       final r = e;
       final ts = DateTime.tryParse(r.date ?? '') ?? DateTime.now();
-      dst.put(nextId, HiveAttempt()
-        ..id = nextId
+      final freshId = _safeNextId(_ab);
+      dst.put(freshId, HiveAttempt()
+        ..id = freshId
         ..timestamp = ts.toIso8601String()
         ..knowledgeTargetId = r.noteId
         ..testType = 'cuedRecall'
@@ -455,7 +465,6 @@ class AppDatabase {
         ..scorePct = _ratingToScore(r.rating)
         ..extras = {'legacy': 'review', 'rating': r.rating ?? 'good'}
         ..wasInterleaved = r.wasInterleaved ?? false);
-      nextId++;
       n++;
     }
     return n;
@@ -481,11 +490,14 @@ class AppDatabase {
   static void _migrateV1ToV2() {
     if (!Hive.isBoxOpen(_nb)) return;
     final box = Hive.box(_nb);
-    for (final key in box.keys) {
-      final note = box.get(key) as HiveNote?;
-      if (note != null && note.deletedAt == null) {
-        // Field already defaults to null; just ensure it's written.
-        box.put(key, note);
+    for (final key in box.keys.toList()) {
+      final raw = box.get(key);
+      if (raw is! HiveNote) {
+        debugPrint('_migrateV1ToV2: skipping non-HiveNote at $key');
+        continue;
+      }
+      if (raw.deletedAt == null) {
+        box.put(key, raw);
       }
     }
   }
@@ -494,12 +506,13 @@ class AppDatabase {
   static void _migrateV2ToV3() {
     if (!Hive.isBoxOpen(_bb)) return;
     final box = Hive.box(_bb);
-    for (final key in box.keys) {
-      final score = box.get(key) as HiveBlurtScore?;
-      if (score != null) {
-        // New fields default to null; just rewrite to ensure schema consistency.
-        box.put(key, score);
+    for (final key in box.keys.toList()) {
+      final raw = box.get(key);
+      if (raw is! HiveBlurtScore) {
+        debugPrint('_migrateV2ToV3: skipping non-HiveBlurtScore at $key');
+        continue;
       }
+      box.put(key, raw);
     }
   }
 
@@ -512,11 +525,15 @@ class AppDatabase {
   static void _migrateV4ToV5() {
     if (!Hive.isBoxOpen(_sb)) return;
     final box = Hive.box(_sb);
-    for (final key in box.keys) {
-      final session = box.get(key) as HiveSession?;
-      if (session != null && session.focusPrimed == null) {
-        session.focusPrimed = false;
-        box.put(key, session);
+    for (final key in box.keys.toList()) {
+      final raw = box.get(key);
+      if (raw is! HiveSession) {
+        debugPrint('_migrateV4ToV5: skipping non-HiveSession at $key');
+        continue;
+      }
+      if (raw.focusPrimed == null) {
+        raw.focusPrimed = false;
+        box.put(key, raw);
       }
     }
   }

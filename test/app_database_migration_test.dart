@@ -110,4 +110,15 @@ void main() {
     expect(Hive.isAdapterRegistered(16), isTrue); // HiveConceptProfile
   });
 
+  test('migration skips malformed legacy rows without throwing', () async {
+    final box = await Hive.openBox('notes');
+    await box.put(1, 'not a note'); // malformed row
+    final meta = await Hive.openBox('meta');
+    await meta.put('schema_version', 1);
+
+    await AppDatabase.ensureInitializedForTesting(tempDir.path);
+
+    expect(box.get(1), 'not a note'); // untouched
+  });
+
 }

@@ -5,6 +5,7 @@ import '../models/learning_attempt.dart';
 import '../models/learning_enums.dart';
 import '../models/session.dart';
 import 'feedback_diagnosis_service.dart';
+import '../models/focus_integrity.dart';
 
 /// Per-blurt deterministic metrics (Phase 2).
 /// AI only scores depthScore and clarityScore; everything else is computed here.
@@ -113,5 +114,38 @@ class MetricsService {
         .toList();
     if (valid.isEmpty) return 0.0;
     return valid.fold<double>(0.0, (acc, a) => acc + a.scorePct) / valid.length;
+  }
+
+  /// Computes average depth across blurts, falling back to 0.0 if sparse/NaN.
+  // Added opportunistically during Tier 2; not in original spec.
+  double calculateAverageDepth(List<BlurtScore> blurts) {
+    if (blurts.isEmpty) return 0.0;
+    final valid = blurts.where((b) => b.depthScore != null && !b.depthScore!.isNaN).toList();
+    if (valid.isEmpty) return 0.0;
+    
+    final total = valid.fold<double>(0.0, (acc, b) => acc + b.depthScore!);
+    return total / valid.length;
+  }
+
+  /// Computes average focus ratio, falling back to 0.0 if sparse/NaN.
+  // Added opportunistically during Tier 2; not in original spec.
+  double calculateFocusRatio(List<FocusIntegrity> records) {
+    if (records.isEmpty) return 0.0;
+    final valid = records.where((r) => r.completionRatio != null && !r.completionRatio!.isNaN).toList();
+    if (valid.isEmpty) return 0.0;
+    
+    final total = valid.fold<double>(0.0, (acc, r) => acc + r.completionRatio!);
+    return total / valid.length;
+  }
+
+  /// Computes baseline score out of valid attempts, falling back to 0.0 if sparse/NaN.
+  // Added opportunistically during Tier 2; not in original spec.
+  double calculateBaselineScore(List<LearningAttempt> attempts) {
+    if (attempts.isEmpty) return 0.0;
+    final valid = attempts.where((a) => !a.scorePct.isNaN).toList();
+    if (valid.isEmpty) return 0.0;
+    
+    final total = valid.fold<double>(0.0, (acc, a) => acc + a.scorePct);
+    return total / valid.length;
   }
 }

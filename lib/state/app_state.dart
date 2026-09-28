@@ -1225,8 +1225,8 @@ class AppState extends ChangeNotifier {
         matches.add(InterventionConceptMatch(
           action: InterventionAction.retrieve,
           conceptType: cType,
-          meanDelayedScore: entry.value,
-          sampleSize: 3,
+          meanDelayedScore: entry.value.mean,
+          sampleSize: entry.value.n,
         ));
       }
     }

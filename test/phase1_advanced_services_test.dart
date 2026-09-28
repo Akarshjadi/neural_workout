@@ -54,7 +54,7 @@ void main() {
         ],
         conceptTypeByNote: {10: ConceptType.procedure},
       );
-      expect(effectiveness[ConceptType.procedure.index], 88.0);
+      expect(effectiveness[ConceptType.procedure.index]!.mean, 88.0);
     });
 
     test('SessionPolicyEngine duration and break heuristics', () {

@@ -155,7 +155,7 @@ class ExperimentService {
   }
 
   /// Computes mean delayed score broken down by ConceptType index for intervention-linked attempts.
-  Map<int, double> effectivenessByConceptType({
+  Map<int, ({double mean, int n})> effectivenessByConceptType({
     required List<LearningAttempt> attempts,
     required List<DelayedOutcome> delayedOutcomes,
     required List<Intervention> interventions,
@@ -173,11 +173,13 @@ class ExperimentService {
         }
       }
     }
-    final result = <int, double>{};
+    final result = <int, ({double mean, int n})>{};
     for (final entry in typeScores.entries) {
       if (entry.value.isNotEmpty) {
-        result[entry.key] =
-            entry.value.reduce((a, b) => a + b) / entry.value.length;
+        result[entry.key] = (
+          mean: entry.value.reduce((a, b) => a + b) / entry.value.length,
+          n: entry.value.length,
+        );
       }
     }
     return result;

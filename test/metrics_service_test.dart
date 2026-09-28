@@ -1,6 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:neural_workout/services/metrics_service.dart';
 import 'package:neural_workout/models/blurt_score.dart';
+import 'package:neural_workout/models/focus_integrity.dart';
+import 'package:neural_workout/models/learning_attempt.dart';
+import 'package:neural_workout/models/learning_enums.dart';
 
 /// Phase 2 — Deterministic metrics calculations.
 void main() {
@@ -107,5 +110,40 @@ void main() {
       );
       expect(result.lossRate, 0);
     });
+
+    test('calculateAverageDepth avoids NaN on sparse data', () {
+      expect(metricsSvc.calculateAverageDepth([]), 0.0);
+      expect(metricsSvc.calculateAverageDepth([
+        BlurtScore(id: 1, noteId: 1, noteTitle: '', date: DateTime.now(), scorePct: 0, matched: [], missed: [], depthScore: double.nan),
+        BlurtScore(id: 2, noteId: 1, noteTitle: '', date: DateTime.now(), scorePct: 0, matched: [], missed: [], depthScore: null),
+      ]), 0.0);
+      expect(metricsSvc.calculateAverageDepth([
+        BlurtScore(id: 3, noteId: 1, noteTitle: '', date: DateTime.now(), scorePct: 0, matched: [], missed: [], depthScore: 80.0),
+        BlurtScore(id: 4, noteId: 1, noteTitle: '', date: DateTime.now(), scorePct: 0, matched: [], missed: [], depthScore: 90.0),
+      ]), 85.0);
+    });
+
+    test('calculateFocusRatio avoids NaN on sparse data', () {
+      expect(metricsSvc.calculateFocusRatio([]), 0.0);
+      expect(metricsSvc.calculateFocusRatio([
+        FocusIntegrity(longestFocusMs: 0), // no plannedDuration, ratio is null
+      ]), 0.0);
+      expect(metricsSvc.calculateFocusRatio([
+        FocusIntegrity(plannedDuration: Duration(minutes: 10), actualDuration: Duration(minutes: 5)),
+        FocusIntegrity(plannedDuration: Duration(minutes: 10), actualDuration: Duration(minutes: 10)),
+      ]), 0.75); // 0.5 and 1.0 => avg 0.75
+    });
+
+    test('calculateBaselineScore avoids NaN on sparse data', () {
+      expect(metricsSvc.calculateBaselineScore([]), 0.0);
+      expect(metricsSvc.calculateBaselineScore([
+        LearningAttempt(id: 1, timestamp: DateTime.now(), testType: TestType.freeRecall, correctness: Correctness.correct), // defaults to NaN scorePct
+      ]), 0.0);
+      expect(metricsSvc.calculateBaselineScore([
+        LearningAttempt(id: 1, timestamp: DateTime.now(), testType: TestType.freeRecall, correctness: Correctness.correct, scorePct: 70),
+        LearningAttempt(id: 2, timestamp: DateTime.now(), testType: TestType.freeRecall, correctness: Correctness.correct, scorePct: 90),
+      ]), 80.0);
+    });
   });
 }
+
