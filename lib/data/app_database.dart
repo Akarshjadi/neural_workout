@@ -413,7 +413,8 @@ class AppDatabase {
     if (src.isEmpty) return 0;
     var n = 0;
     for (final e in src.values) {
-      final b = e as HiveBlurtScore;
+      if (e is! HiveBlurtScore) continue;
+      final b = e;
       final ts = DateTime.tryParse(b.date ?? '') ?? DateTime.now();
       final pct = b.scorePct ?? 0.0;
       dst.put(b.id ?? (n + 1), HiveAttempt()
@@ -442,7 +443,8 @@ class AppDatabase {
     var n = 0;
     var nextId = 1000000; // separate id space: never collide with blurt ids
     for (final e in src.values) {
-      final r = e as HiveReview;
+      if (e is! HiveReview) continue;
+      final r = e;
       final ts = DateTime.tryParse(r.date ?? '') ?? DateTime.now();
       dst.put(nextId, HiveAttempt()
         ..id = nextId
