@@ -133,19 +133,6 @@ class Intervention {
       action == InterventionAction.workedExample;
 }
 
-/// Aggregated outcome of an intervention.
-class InterventionOutcome {
-  final int interventionId;
-  final double? delayedDelta;
-  final int sampleSize;
-
-  const InterventionOutcome({
-    required this.interventionId,
-    this.delayedDelta,
-    required this.sampleSize,
-  });
-}
-
 /// Progressive cascade stages when failures repeat.
 enum InterventionCascadeStage {
   none,

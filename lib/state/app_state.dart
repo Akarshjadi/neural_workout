@@ -44,7 +44,6 @@ import '../services/context_focus_service.dart';
 import '../services/delayed_outcome_service.dart';
 import '../services/experiment_service.dart';
 import '../services/feedback_diagnosis_service.dart';
-import '../services/learning_curve_service.dart';
 import '../services/research_catalog.dart';
 import '../services/retrieval_engine.dart';
 import '../services/session_policy_engine.dart';
@@ -70,7 +69,6 @@ class AppState extends ChangeNotifier {
   final DelayedOutcomeService delayedOutcomeSvc = const DelayedOutcomeService();
   final ContextFocusService contextFocusSvc = const ContextFocusService();
   final ExperimentService experimentSvc = const ExperimentService();
-  final LearningCurveService learningCurveSvc = const LearningCurveService();
 
   /// Phase 6 — Notifications & suggestions.
   final NotificationService notificationSvc = NotificationService();

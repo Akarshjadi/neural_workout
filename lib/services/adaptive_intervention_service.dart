@@ -175,24 +175,12 @@ class AdaptiveInterventionService {
       );
     }
 
-    return matchByHeuristic(
+    return matchByConceptType(
       targetId: targetId,
       conceptType: conceptType,
       contrastTargetId: contrastTargetId,
     );
   }
-
-  /// Heuristic mapping from ConceptType to default intervention.
-  Intervention matchByHeuristic({
-    required int? targetId,
-    required ConceptType conceptType,
-    int? contrastTargetId,
-  }) =>
-      matchByConceptType(
-        targetId: targetId,
-        conceptType: conceptType,
-        contrastTargetId: contrastTargetId,
-      );
 
   /// Policy mapping concept types to primary recommended interventions.
   Intervention matchByConceptType({

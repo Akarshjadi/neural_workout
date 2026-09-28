@@ -88,6 +88,10 @@ class CognitionEngine {
   });
 
   // ── Public API ───────────────────────────────────────────────────────────
+  //
+  // The three forecasts below are deprecated as a *surface* (no fourth composite
+  // score is shown). The math is unchanged and remains the basis for
+  // [neuroFactorsFor], which is what the UI actually renders.
 
   /// Neuroplasticity proxy: novelty load + desirable difficulty + retrieval
   /// practice + consistency + recovery. All five are real levers research

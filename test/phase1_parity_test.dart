@@ -61,13 +61,6 @@ void main() {
       expect(cascadeStageFor(3), InterventionCascadeStage.persistent);
       expect(cascadeStageFor(4), InterventionCascadeStage.workedExample);
 
-      const outcome = InterventionOutcome(
-        interventionId: 1,
-        sampleSize: 5,
-        delayedDelta: 10.5,
-      );
-      expect(outcome.delayedDelta, 10.5);
-
       const match = InterventionConceptMatch(
         action: InterventionAction.explain,
         conceptType: ConceptType.definition,

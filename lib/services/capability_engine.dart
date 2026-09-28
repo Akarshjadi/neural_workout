@@ -7,6 +7,7 @@ import 'adaptive_intervention_service.dart';
 @Deprecated('Research reference only — not called at runtime')
 const String researchPrompt = capabilityArchitectureEnginePrompt;
 
+// Not on the execution path — research reference only. Pinned by test/capability_engine_test.dart.
 const String capabilityArchitectureEnginePrompt = r'''
 # PERSONAL CAPABILITY ARCHITECTURE ENGINE
 You are a **Personal Capability Assessment & Development Engine**.
