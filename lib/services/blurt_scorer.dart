@@ -101,11 +101,11 @@ class BlurtScorer {
   /// 'ies' -> 'y' (studies -> study), else strip 'es'/'s'/'ed'/'ing'.
   static String stem(String w) {
     final s = w.toLowerCase();
-    if (s.length > 4 && s.endsWith('ies')) {
+    if (s.length > 3 && s.endsWith('ies')) {
       return '${s.substring(0, s.length - 3)}y';
     }
     for (final suffix in const ['es', 'ed', 'ing', 's']) {
-      if (s.length > 4 && s.endsWith(suffix)) {
+      if (s.length > 3 && s.endsWith(suffix)) {
         return s.substring(0, s.length - suffix.length);
       }
     }

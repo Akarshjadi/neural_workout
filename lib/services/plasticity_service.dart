@@ -107,6 +107,7 @@ class PlasticityProfile {
   final DifficultyResult difficulty;
   final NetworkResult network;
   final MindfulnessResult mindfulness;
+  /// Note: This is an internal behavioural proxy index, NOT the user-facing composite score. Rankings use RankingService.evidenceScore.
   final double overall0to100;
   final String disclaimer;
 

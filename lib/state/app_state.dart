@@ -22,6 +22,7 @@ import '../services/pathway_service.dart';
 import '../services/ranking_service.dart';
 import '../services/streak_service.dart';
 import '../services/suggestion_service.dart';
+import '../models/suggestion_context.dart';
 import '../models/break_record.dart';
 import '../services/break_service.dart';
 import '../services/strategy_profile_service.dart';
@@ -48,9 +49,9 @@ import '../services/research_catalog.dart';
 import '../services/retrieval_engine.dart';
 import '../services/session_policy_engine.dart';
 
-import '../widgets/visuals/multidimensional_evidence_profile.dart';
+import '../models/evidence_profile_dimension.dart';
 
-class AppState extends ChangeNotifier {
+class AppState extends ChangeNotifier implements SuggestionContext {
   final AppDatabase db;
   final FsrsEngine fsrs = FsrsEngine();
   PathwayService pathways = PathwayService();
@@ -642,7 +643,7 @@ class AppState extends ChangeNotifier {
         if (sorted.isNotEmpty) contrastId = sorted.first.key;
 
         final step = sessionPolicy.planStep(
-          note: note,
+          note: note, conceptType: db.conceptTypeFor(note.id ?? -1),
           noteAttempts: attempts,
           noteErrors: errors,
           noteDelayedOutcomes: delayedOutcomes,
@@ -1212,25 +1213,12 @@ class AppState extends ChangeNotifier {
     final conceptMap = <int, ConceptType>{
       for (final n in notes) n.id: db.conceptTypeFor(n.id),
     };
-    final eff = const ExperimentService().effectivenessByConceptType(
+    return const ExperimentService().effectivenessByActionAndConcept(
       attempts: db.allAttempts(),
       delayedOutcomes: db.allDelayedOutcomes(),
       interventions: db.allInterventions(),
       conceptTypeByNote: conceptMap,
     );
-    final matches = <InterventionConceptMatch>[];
-    for (final entry in eff.entries) {
-      if (entry.key >= 0 && entry.key < ConceptType.values.length) {
-        final cType = ConceptType.values[entry.key];
-        matches.add(InterventionConceptMatch(
-          action: InterventionAction.retrieve,
-          conceptType: cType,
-          meanDelayedScore: entry.value.mean,
-          sampleSize: entry.value.n,
-        ));
-      }
-    }
-    return matches;
   }
 
   List<int>? _notesDueForDelayedTestCache;

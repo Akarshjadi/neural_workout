@@ -1,6 +1,7 @@
 import '../models/error_record.dart';
 import '../models/learning_enums.dart';
-import '../state/app_state.dart';
+import '../models/suggestion_context.dart';
+import '../state/app_state.dart' show AppState;
 import 'experiment_service.dart';
 import 'ranking_service.dart';
 
@@ -9,7 +10,7 @@ class SuggestionService {
   final RankingService _ranking = RankingService();
 
   /// Generates evidence-driven pedagogical suggestions from errors, delayed retention, and experiments.
-  List<String> generateEvidenceSuggestions(AppState state, {int limit = 2}) {
+  List<String> generateEvidenceSuggestions(SuggestionContext state, {int limit = 2}) {
     final suggestions = <String>[];
     final now = DateTime.now();
 
@@ -78,7 +79,7 @@ class SuggestionService {
   }
 
   /// Generate 1-2 actionable suggestions, prioritized by importance.
-  List<String> generateSuggestions(AppState state) {
+  List<String> generateSuggestions(SuggestionContext state) {
     final critical = <String>[];
     final high = <String>[];
     final medium = <String>[];

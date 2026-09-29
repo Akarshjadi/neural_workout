@@ -142,7 +142,8 @@ class TodayPage extends StatelessWidget {
                     Builder(builder: (context) {
                       final n = state.notes.where((note) => note.id == noteId).firstOrNull;
                       if (n == null) return const SizedBox.shrink();
-                      final attempts = state.db.attemptsForTarget(n.id);
+                      final attempts = state.db.attemptsForTarget(n.id)
+                                            ..sort((a, b) => a.timestamp.compareTo(b.timestamp));
                       final lastAttempt = attempts.isNotEmpty ? attempts.last : null;
                       final days = lastAttempt != null ? DateTime.now().difference(lastAttempt.timestamp).inDays : 0;
                       return Padding(

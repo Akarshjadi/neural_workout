@@ -118,7 +118,6 @@ class BackCoverPage extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           ResearchHorizonWidget(
-            catalog: state.researchCatalog,
           ),
           const SizedBox(height: 48),
         ],

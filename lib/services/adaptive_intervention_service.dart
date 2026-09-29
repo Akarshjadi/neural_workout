@@ -105,7 +105,7 @@ class AdaptiveInterventionService {
     }
 
     // 3. Persistent failures (3+) -> Worked example
-    final recentFails = targetAttempts.take(3).where((a) => a.correctness.isFail).length;
+    final recentFails = targetAttempts.reversed.take(3).where((a) => a.correctness.isFail).length;
     if (recentFails >= 3) {
       return Intervention(
         id: 0,

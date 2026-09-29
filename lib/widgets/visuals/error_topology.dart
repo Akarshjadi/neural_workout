@@ -122,7 +122,7 @@ class _TopologyPainter extends CustomPainter {
       final rad = 8.0 + (count / maxCount * 12.0);
       
       canvas.drawCircle(pts[i], rad, Paint()..color = isS ? NotebookTheme.oxblood : NotebookTheme.oxblood.withValues(alpha: 0.3));
-      canvas.drawCircle(pts[i], rad, Paint()..color = isS ? NotebookTheme.oxblood : NotebookTheme.graphite..style = PaintingStyle.stroke..strokeWidth = 1.0);
+    canvas.drawCircle(pts[i], rad, (Paint()..color = isS ? NotebookTheme.oxblood : NotebookTheme.graphite)..style = PaintingStyle.stroke..strokeWidth = 1.0);
 
       tp.text = TextSpan(
         text: types[i].key.name.substring(0, math.min(8, types[i].key.name.length)),

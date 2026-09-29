@@ -617,13 +617,14 @@ class HiveErrorAdapter extends TypeAdapter<HiveError> {
       ..source = fields[3] as String?
       ..confidence = fields[4] as double?
       ..evidence = fields[5] as String?
-      ..createdAt = fields[6] as String?;
+      ..createdAt = fields[6] as String?
+      ..confusedConceptId = fields[7] as int?;
   }
 
   @override
   void write(BinaryWriter writer, HiveError obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(8)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -637,7 +638,9 @@ class HiveErrorAdapter extends TypeAdapter<HiveError> {
       ..writeByte(5)
       ..write(obj.evidence)
       ..writeByte(6)
-      ..write(obj.createdAt);
+      ..write(obj.createdAt)
+      ..writeByte(7)
+      ..write(obj.confusedConceptId);
   }
 
   @override

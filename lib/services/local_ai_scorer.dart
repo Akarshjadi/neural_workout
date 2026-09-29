@@ -20,6 +20,12 @@ class LocalAiScorer {
   InferenceModel? _model;
   bool _ready = false;
 
+  void dispose() {
+    _model?.close();
+    _model = null;
+    _ready = false;
+  }
+
   /// Model type (only setting that actually changes inference behavior).
   ModelType modelType = ModelType.gemmaIt;
 

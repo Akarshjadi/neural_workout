@@ -17,6 +17,7 @@ class WorkoutSessionState {
   final int stepsCompleted; // 0..8
   final int? anchorNoteId; // resolved source note id (null for a cold-start blurt)
   final String anchorTitle;
+  final int? attemptId;
 
   String blurtText; // step 1 raw input
   String cheatSheetText; // step 3 condensed summary
@@ -36,11 +37,13 @@ class WorkoutSessionState {
   final String promptCue;
   final String interventionExplanation;
   final int? timerSeconds;
+  final int? interventionId;
 
   WorkoutSessionState({
     required this.start,
     this.stepsCompleted = 0,
     this.anchorNoteId,
+    this.attemptId,
     required this.anchorTitle,
     this.blurtText = '',
     this.cheatSheetText = '',
@@ -53,6 +56,7 @@ class WorkoutSessionState {
     this.promptCue = '',
     this.interventionExplanation = '',
     this.timerSeconds,
+    this.interventionId,
   });
 
   bool get isComplete => stepsCompleted >= 8;
@@ -67,6 +71,7 @@ class WorkoutSessionState {
   WorkoutSessionState copyWith({
     int? stepsCompleted,
     Object? anchorNoteId = _unset,
+    Object? attemptId = _unset,
     String? anchorTitle,
     Object? blurtText = _unset,
     Object? cheatSheetText = _unset,
@@ -79,6 +84,7 @@ class WorkoutSessionState {
     Object? promptCue = _unset,
     Object? interventionExplanation = _unset,
     Object? timerSeconds = _unset,
+    Object? interventionId = _unset,
   }) =>
       WorkoutSessionState(
         start: start,
@@ -86,6 +92,9 @@ class WorkoutSessionState {
         anchorNoteId: identical(anchorNoteId, _unset)
             ? this.anchorNoteId
             : anchorNoteId as int?,
+      attemptId: identical(attemptId, _unset)
+          ? this.attemptId
+          : attemptId as int?,
         anchorTitle: anchorTitle ?? this.anchorTitle,
         blurtText: identical(blurtText, _unset)
             ? this.blurtText
@@ -120,14 +129,16 @@ class WorkoutSessionState {
         timerSeconds: identical(timerSeconds, _unset)
             ? this.timerSeconds
             : timerSeconds as int?,
+      interventionId: identical(interventionId, _unset) ? this.interventionId : interventionId as int?,
       );
 
   /// Lossless, escaped JSON (fixes the old hand-rolled, un-escaped serializer).
   String toJson() => jsonEncode({
-        'v': 3,
+        'v': 4,
         'start': start.toIso8601String(),
         'stepsCompleted': stepsCompleted,
         'anchorNoteId': anchorNoteId,
+      'attemptId': attemptId,
         'anchorTitle': anchorTitle,
         'blurt': blurtText,
         'cheatSheet': cheatSheetText,
@@ -140,6 +151,7 @@ class WorkoutSessionState {
         'promptCue': promptCue,
         'interventionExplanation': interventionExplanation,
         'timerSeconds': timerSeconds,
+      'interventionId': interventionId,
       });
 
   /// Parses an autosaved blob; returns null for anything malformed/missing.
@@ -148,13 +160,14 @@ class WorkoutSessionState {
     try {
       final m = jsonDecode(json) as Map<String, dynamic>;
       final v = m['v'];
-      if (v != 1 && v != 2 && v != 3) return null; // unknown schema — caller falls back to fresh state
+      if (v != 1 && v != 2 && v != 3 && v != 4) return null; // unknown schema — caller falls back to fresh state
       final required = ['v', 'start', 'stepsCompleted', 'anchorTitle'];
       if (!required.every((k) => m.containsKey(k))) return null;
       return WorkoutSessionState(
         start: DateTime.parse(m['start'] as String),
         stepsCompleted: (m['stepsCompleted'] as num).toInt(),
         anchorNoteId: m['anchorNoteId'] as int?,
+        attemptId: m['attemptId'] as int?,
         anchorTitle: m['anchorTitle'] as String,
         blurtText: m['blurt'] as String? ?? '',
         cheatSheetText: m['cheatSheet'] as String? ?? '',
@@ -171,6 +184,7 @@ class WorkoutSessionState {
         promptCue: m['promptCue'] as String? ?? '',
         interventionExplanation: m['interventionExplanation'] as String? ?? '',
         timerSeconds: (m['timerSeconds'] as num?)?.toInt(),
+        interventionId: (m['interventionId'] as num?)?.toInt(),
       );
     } catch (e, st) {
       // Catch ALL errors (TypeError, CastError, FormatException, etc.) — a

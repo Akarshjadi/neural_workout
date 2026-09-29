@@ -1,21 +1,9 @@
+import '../../models/evidence_profile_dimension.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../ui/theme_notebook.dart';
-import 'visual_semantics.dart';
 
-class EvidenceProfileDimension {
-  final String label;
-  final double value;
-  final EvidenceState state;
-  final String detail;
 
-  const EvidenceProfileDimension({
-    required this.label,
-    required this.value,
-    this.state = EvidenceState.observed,
-    required this.detail,
-  });
-}
 
 class MultidimensionalEvidenceProfile extends StatefulWidget {
   final List<EvidenceProfileDimension> dimensions;

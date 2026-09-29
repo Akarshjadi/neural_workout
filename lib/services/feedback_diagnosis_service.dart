@@ -301,6 +301,7 @@ class FeedbackDiagnosisService {
         final second = list[i - 1];
         final third = list[i];
 
+        if (first.confidence == null || third.confidence == null) continue;
         final hadIt = !first.correctness.isFail;
         final confidenceCrash = (first.confidence ?? 0) -
                 (third.confidence ?? 0) >=

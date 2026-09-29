@@ -18,7 +18,10 @@ class PathwayService {
   final Map<String, int> _targets;
 
   PathwayService({Map<String, int>? targets})
-      : _targets = {...defaultTargets, ...?targets};
+      : _targets = {
+          ...defaultTargets,
+          if (targets != null) for (final e in targets.entries) e.key: e.value < 1 ? 1 : e.value,
+        };
 
   /// Current weekly targets (read-only view for settings/UI, issue 12).
   Map<String, int> get targets => Map.unmodifiable(_targets);

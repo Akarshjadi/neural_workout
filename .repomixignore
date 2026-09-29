@@ -1,0 +1,36 @@
+# Git
+.git/
+.gitignore
+
+# Flutter/Dart
+.dart_tool/
+build/
+.packages
+.pub-cache/
+.pub/
+*.log
+*.iml
+
+# Platform specific
+android/
+ios/
+macos/
+web/
+windows/
+linux/
+
+# IDEs
+.vscode/
+.idea/
+
+# Generated
+*.g.dart
+*.freezed.dart
+coverage/
+
+# Misc
+*.py
+*.pyc
+__pycache__/
+*.db
+*.sqlite

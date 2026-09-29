@@ -10,7 +10,7 @@ import 'package:neural_workout/models/learning_attempt.dart';
 import 'package:neural_workout/models/learning_enums.dart';
 import 'package:neural_workout/models/note.dart';
 import 'package:neural_workout/services/ai_scaffolding_service.dart';
-import 'package:neural_workout/services/research_catalog.dart';
+
 import 'package:neural_workout/ui/theme_notebook.dart';
 import 'package:neural_workout/widgets/visuals/calibration_field.dart';
 import 'package:neural_workout/widgets/visuals/circadian_performance_card.dart';
@@ -20,6 +20,7 @@ import 'package:neural_workout/widgets/visuals/error_topology.dart';
 import 'package:neural_workout/widgets/visuals/intervention_trial_board.dart';
 import 'package:neural_workout/widgets/visuals/memory_horizon.dart';
 import 'package:neural_workout/widgets/visuals/multidimensional_evidence_profile.dart';
+import 'package:neural_workout/models/evidence_profile_dimension.dart';
 import 'package:neural_workout/widgets/visuals/research_horizon.dart';
 import 'package:neural_workout/widgets/visuals/retention_trajectory.dart';
 import 'package:neural_workout/widgets/visuals/session_integrity_timeline.dart';
@@ -98,8 +99,7 @@ void main() {
 
     // 9. Research Horizon
     await tester.pumpWidget(wrap(
-      ResearchHorizonWidget(catalog: ResearchCatalog()),
-    ));
+      ResearchHorizonWidget()));
     expect(find.text('RESEARCH EVIDENCE HORIZON'), findsOneWidget);
 
     // 10. Trial Board

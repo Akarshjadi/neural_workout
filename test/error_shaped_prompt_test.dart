@@ -50,7 +50,7 @@ void main() {
       expect(intervention.reason, InterventionReason.retrievalError);
       expect(intervention.testTypeOverride, TestType.cuedRecall);
 
-      final step = engine.planStep(
+      final step = engine.planStep(conceptType: ConceptType.definition,
         note: note(),
         noteAttempts: [],
         noteErrors: [err(ErrorType.retrievalFailure, 1)],
@@ -73,7 +73,7 @@ void main() {
       expect(intervention.action, InterventionAction.focusReset);
       expect(intervention.testTypeOverride, TestType.freeRecall);
 
-      final step = engine.planStep(
+      final step = engine.planStep(conceptType: ConceptType.definition,
         note: note(),
         noteAttempts: [],
         noteErrors: [err(ErrorType.carelessError, 1)],

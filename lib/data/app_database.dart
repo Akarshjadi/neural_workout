@@ -165,6 +165,8 @@ class HiveError {
   @HiveField(4) double? confidence;
   @HiveField(5) String? evidence;
   @HiveField(6) String? createdAt;
+  @HiveField(7)
+  int? confusedConceptId;
 }
 
 @HiveType(typeId: 12)
@@ -323,8 +325,12 @@ class AppDatabase {
     final stored = meta.get('schema_version') as int? ?? 0;
     if (stored < schemaVersion) {
       debugPrint('AppDatabase: migrating schema v$stored → v$schemaVersion');
-      _runMigrations(stored);
-      meta.put('schema_version', schemaVersion);
+      try {
+        _runMigrations(stored);
+        meta.put('schema_version', schemaVersion);
+      } catch (e) {
+        debugPrint('AppDatabase: Database migration incomplete: $e. Will retry next boot.');
+      }
     }
   }
 
@@ -390,6 +396,13 @@ class AppDatabase {
     }
     if (meta.get('backfilled_attempts') == true) return;
     try {
+      final ab = Hive.box(_ab);
+      final keysToDelete = ab.keys.where((k) {
+        final a = ab.get(k);
+        return a is HiveAttempt && a.extras != null && a.extras!.containsKey('_v5_migration_source');
+      }).toList();
+      if (keysToDelete.isNotEmpty) ab.deleteAll(keysToDelete);
+
       var attempts = _backfillAttemptsFromBlurts();
       attempts += _backfillAttemptsFromReviews();
       meta.put('backfilled_attempts', true);
@@ -435,7 +448,7 @@ class AppDatabase {
         ..scorePct = pct
         ..responseTimeMs = b.recallSpeedMs
         ..extras = {
-          'legacy': 'blurt',
+          '_v5_migration_source': 'blurt',
           if (b.matched != null && b.matched!.isNotEmpty)
             'matched': b.matched!.join('|'),
           if (b.missed != null && b.missed!.isNotEmpty)
@@ -463,7 +476,7 @@ class AppDatabase {
         ..testType = 'cuedRecall'
         ..correctness = _ratingToCorrectness(r.rating).name
         ..scorePct = _ratingToScore(r.rating)
-        ..extras = {'legacy': 'review', 'rating': r.rating ?? 'good'}
+        ..extras = {'_v5_migration_source': 'review', 'rating': r.rating ?? 'good'}
         ..wasInterleaved = r.wasInterleaved ?? false);
       n++;
     }
@@ -497,6 +510,7 @@ class AppDatabase {
         continue;
       }
       if (raw.deletedAt == null) {
+        // Re-put triggers Hive to re-serialize the row using the new adapter schema.
         box.put(key, raw);
       }
     }
@@ -512,6 +526,7 @@ class AppDatabase {
         debugPrint('_migrateV2ToV3: skipping non-HiveBlurtScore at $key');
         continue;
       }
+      // Re-put triggers Hive to re-serialize the row using the new adapter schema.
       box.put(key, raw);
     }
   }
@@ -570,7 +585,7 @@ class AppDatabase {
   List<Note> allNotes({bool includeDeleted = false}) {
     if (!Hive.isBoxOpen(_nb)) return [];
     return _n.values
-        .map((e) => e as HiveNote)
+        .whereType<HiveNote>()
         .where((h) => includeDeleted || h.deletedAt == null)
         .map((e) => _nF(e))
         .toList();
@@ -891,7 +906,10 @@ class AppDatabase {
     id: h.id ?? 0,
     title: h.title ?? '(untitled)',
     body: h.body ?? '',
-    kind: NoteKind.values.byName(h.kind ?? NoteKind.blurtSummary.name),
+    kind: NoteKind.values.firstWhere(
+      (e) => e.name == h.kind,
+      orElse: () => NoteKind.blurtSummary,
+    ),
     createdAt: DateTime.tryParse(h.createdAt ?? '') ?? DateTime.now(),
     updatedAt: DateTime.tryParse(h.updatedAt ?? '') ?? DateTime.now(),
     card: Card.fromMap(_dC(h.cardState ?? '')),
@@ -1002,8 +1020,11 @@ class AppDatabase {
     return h is HiveAttempt ? _attemptFromHive(h) : null;
   }
 
-  List<LearningAttempt> attemptsForTarget(int targetId) =>
-      allAttempts().where((a) => a.knowledgeTargetId == targetId).toList();
+  List<LearningAttempt> attemptsForTarget(int targetId) {
+    final list = allAttempts().where((a) => a.knowledgeTargetId == targetId).toList();
+    list.sort((a, b) => a.timestamp.compareTo(b.timestamp));
+    return list;
+  }
 
   List<LearningAttempt> recentAttempts({int limit = 200}) {
     final all = allAttempts()
@@ -1121,6 +1142,7 @@ class AppDatabase {
       ..source = err.source.name
       ..confidence = err.confidence
       ..evidence = err.evidence
+      ..confusedConceptId = err.confusedConceptId
       ..createdAt = err.createdAt.toIso8601String());
     return id;
   }
@@ -1141,6 +1163,7 @@ class AppDatabase {
         confidence: e.confidence ?? 1.0,
         evidence: e.evidence ?? '',
         createdAt: ts,
+        confusedConceptId: e.confusedConceptId,
       ));
     }
     return out;
@@ -1162,6 +1185,7 @@ class AppDatabase {
         confidence: e.confidence ?? 1.0,
         evidence: e.evidence ?? '',
         createdAt: ts,
+        confusedConceptId: e.confusedConceptId,
       ));
     }
     return out;

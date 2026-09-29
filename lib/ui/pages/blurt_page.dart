@@ -18,8 +18,6 @@ class _BlurtPageState extends State<BlurtPage> {
   final Stopwatch _stopwatch = Stopwatch();
   Timer? _timer;
 
-  final bool _showBreathing = false;
-  int _breathingSec = 30;
   double _confidence = 0.75;
   ScaffoldingLevel _scaffolding = ScaffoldingLevel.none;
 
@@ -27,9 +25,7 @@ class _BlurtPageState extends State<BlurtPage> {
   void initState() {
     super.initState();
     _timer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (_showBreathing && _breathingSec > 0) {
-        setState(() => _breathingSec--);
-      } else if (mounted) {
+      if (mounted) {
         setState(() {});
       }
     });
@@ -62,10 +58,8 @@ class _BlurtPageState extends State<BlurtPage> {
 
     if (state.activeSession == null) {
       await state.startSession('Quick note');
-      state.activeWorkout = state.activeWorkout?.copyWith(blurtText: _ctrl.text);
-    } else {
-      state.activeWorkout = state.activeWorkout?.copyWith(blurtText: _ctrl.text);
     }
+    await state.setBlurt(_ctrl.text);
 
     await state.finishBlurt(
       recallSpeedMs: _stopwatch.elapsedMilliseconds,

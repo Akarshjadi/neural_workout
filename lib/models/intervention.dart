@@ -15,8 +15,16 @@ enum InterventionAction {
   interleave, // mix confusable targets
   delay, // stop; let forgetting do its work
   reflect, // metacognitive reflection / self-diagnosis
-  focusReset, // attention-family errors: slow down / re-read
+  focusReset; 
+  static InterventionAction? tryParse(String? val) {
+    if (val == null) return null;
+    for (final v in InterventionAction.values) {
+      if (v.name == val) return v;
+    }
+    return null;
+  }
 }
+
 
 extension InterventionActionLabel on InterventionAction {
   String get label => switch (this) {
@@ -65,8 +73,16 @@ enum InterventionReason {
   confusableTargets, // graph relation marked confusable
   transferWeak, // delayed/transfer evidence lagging recall
   dueForDelayedTest, // FSRS says revisitable, evidence says untested
-  experimentAssignment, // an active experiment assigned this
+  experimentAssignment; 
+  static InterventionReason? tryParse(String? val) {
+    if (val == null) return null;
+    for (final v in InterventionReason.values) {
+      if (v.name == val) return v;
+    }
+    return null;
+  }
 }
+
 
 extension InterventionReasonLabel on InterventionReason {
   String get label => switch (this) {

@@ -155,31 +155,36 @@ class ExperimentService {
   }
 
   /// Computes mean delayed score broken down by ConceptType index for intervention-linked attempts.
-  Map<int, ({double mean, int n})> effectivenessByConceptType({
+  List<InterventionConceptMatch> effectivenessByActionAndConcept({
     required List<LearningAttempt> attempts,
     required List<DelayedOutcome> delayedOutcomes,
     required List<Intervention> interventions,
     required Map<int, ConceptType> conceptTypeByNote,
   }) {
-    final typeScores = <int, List<double>>{};
+    final scores = <String, List<double>>{};
+    final actionById = {for (final i in interventions) i.id: i.action};
     for (final a in attempts) {
       if (a.interventionId != null &&
           a.knowledgeTargetId != null &&
           !a.scorePct.isNaN &&
           a.isDelayed) {
         final cType = conceptTypeByNote[a.knowledgeTargetId!];
-        if (cType != null) {
-          typeScores.putIfAbsent(cType.index, () => []).add(a.scorePct);
+        final action = actionById[a.interventionId];
+        if (cType != null && action != null) {
+          scores.putIfAbsent('${action.index}_${cType.index}', () => []).add(a.scorePct);
         }
       }
     }
-    final result = <int, ({double mean, int n})>{};
-    for (final entry in typeScores.entries) {
+    final result = <InterventionConceptMatch>[];
+    for (final entry in scores.entries) {
       if (entry.value.isNotEmpty) {
-        result[entry.key] = (
-          mean: entry.value.reduce((a, b) => a + b) / entry.value.length,
-          n: entry.value.length,
-        );
+        final parts = entry.key.split('_');
+        result.add(InterventionConceptMatch(
+          action: InterventionAction.values[int.parse(parts[0])],
+          conceptType: ConceptType.values[int.parse(parts[1])],
+          meanDelayedScore: entry.value.reduce((a, b) => a + b) / entry.value.length,
+          sampleSize: entry.value.length,
+        ));
       }
     }
     return result;

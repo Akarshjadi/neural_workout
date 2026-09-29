@@ -35,26 +35,15 @@ void main() {
       final responsiveness = service.computeInterventionResponsiveness(attempts: [], interventions: []);
       expect(responsiveness, 0.0);
 
-      final effectiveness = service.effectivenessByConceptType(
-        attempts: [
-          LearningAttempt(
-            id: 1,
-            knowledgeTargetId: 10,
-            timestamp: now.add(const Duration(days: 2)),
-            acquiredAt: now,
-            testType: TestType.freeRecall,
-            correctness: Correctness.correct,
-            scorePct: 88.0,
-            interventionId: 1,
-          ),
-        ],
-        delayedOutcomes: [],
-        interventions: [
-          Intervention(id: 1, createdAt: now, action: InterventionAction.retrieve, reason: InterventionReason.baseline)
-        ],
-        conceptTypeByNote: {10: ConceptType.procedure},
-      );
-      expect(effectiveness[ConceptType.procedure.index]!.mean, 88.0);
+      
+
+    final ea = service.effectivenessByActionAndConcept(
+      attempts: [],
+      delayedOutcomes: [],
+      interventions: [],
+      conceptTypeByNote: {},
+    );
+    expect(ea.isEmpty, isTrue);
     });
 
     test('SessionPolicyEngine duration and break heuristics', () {

@@ -105,7 +105,7 @@ class _ComparePageState extends State<ComparePage> {
                       state.logErrorRecord(
                         conceptId: w.anchorNoteId?.toString() ?? 'c_${DateTime.now().millisecondsSinceEpoch}',
                         errorType: type,
-                        attemptId: '${state.activeSession?.id ?? 0}',
+                        attemptId: '${w.attemptId ?? 0}',
                         userResponse: blurtText,
                         expectedResponse: matched.join(', '),
                       );

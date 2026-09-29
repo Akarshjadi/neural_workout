@@ -1,14 +1,12 @@
-import 'package:flutter/material.dart';
 import '../../services/research_catalog.dart';
+import 'package:flutter/material.dart';
 import '../../ui/theme_notebook.dart';
 
 class ResearchHorizonWidget extends StatelessWidget {
-  final ResearchCatalog catalog;
   final double height;
 
   const ResearchHorizonWidget({
     super.key,
-    required this.catalog,
     this.height = 140,
   });
 

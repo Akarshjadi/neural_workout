@@ -32,10 +32,14 @@ class NotificationService {
       await _plugin.initialize(settings);
 
       // Request POST_NOTIFICATIONS on Android 13+
-      await _plugin
+      final granted = await _plugin
           .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
           ?.requestNotificationsPermission();
 
+      if (granted == false) {
+        _ready = false;
+        return;
+      }
       _ready = true;
     } catch (e, stackTrace) {
       _ready = false;

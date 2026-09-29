@@ -108,8 +108,8 @@ class _BrainBloomState extends State<_BrainBloom> {
       return LayoutNode(
         n.id, 
         radius: 10.0 + (linkCount * 3.0),
-        x: math.Random().nextDouble() * 200 - 100,
-        y: math.Random().nextDouble() * 200 - 100,
+        x: math.Random(42).nextDouble() * 200 - 100,
+        y: math.Random(42).nextDouble() * 200 - 100,
       );
     }).toList();
 

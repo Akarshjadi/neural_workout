@@ -52,6 +52,14 @@ enum DelayBucket {
   longDelay, // >= 7 days
   transfer; // measured via a transfer-type attempt (orthogonal, wins outright)
 
+  static DelayBucket? tryParse(String? val) {
+    if (val == null) return null;
+    for (final v in DelayBucket.values) {
+      if (v.name == val) return v;
+    }
+    return null;
+  }
+
   static DelayBucket fromElapsed(Duration elapsed) {
     if (elapsed.inMinutes < 60) return DelayBucket.immediate;
     if (elapsed.inHours < 24) return DelayBucket.shortDelay;

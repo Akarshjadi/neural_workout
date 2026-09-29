@@ -50,6 +50,7 @@ class SessionPolicyEngine {
   /// Plans the next learning step for a targeted note based on all evidence.
   SessionPlanStep planStep({
     required Note note,
+    required ConceptType conceptType,
     required List<LearningAttempt> noteAttempts,
     required List<ErrorRecord> noteErrors,
     required List<DelayedOutcome> noteDelayedOutcomes,
@@ -62,21 +63,28 @@ class SessionPolicyEngine {
 
     // 1. Check if due for a delayed test
     final isDueDelayed = noteAttempts.isNotEmpty && delayedService.isDueForDelayedTest(
-      sourceAttempt: noteAttempts.first,
+      sourceAttempt: noteAttempts.last,
       existingOutcomes: noteDelayedOutcomes,
       now: currentTime,
     );
 
     // 2. Select intervention
     final intervention = isDueDelayed
-        ? Intervention(
-            id: 0,
-            createdAt: currentTime,
-            action: InterventionAction.retrieve,
-            reason: InterventionReason.dueForDelayedTest,
-            explanation: 'Concept is due for a delayed retention test.',
-            knowledgeTargetId: note.id,
-          )
+        ? (empirical.isNotEmpty 
+            ? interventionService.matchByEmpiricalData(
+                targetId: note.id,
+            conceptType: conceptType,
+                empirical: empirical,
+                contrastTargetId: contrastNote?.id,
+              )
+            : Intervention(
+                id: 0,
+                createdAt: currentTime,
+                action: InterventionAction.retrieve,
+                reason: InterventionReason.dueForDelayedTest,
+                explanation: 'Concept is due for a delayed retention test.',
+                knowledgeTargetId: note.id,
+              ))
         : interventionService.decideIntervention(
             targetId: note.id,
             targetAttempts: noteAttempts,

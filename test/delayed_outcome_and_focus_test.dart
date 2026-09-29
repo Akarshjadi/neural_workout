@@ -123,7 +123,7 @@ void main() {
       card: Card(cardId: 1),
     );
 
-    final step = policy.planStep(
+    final step = policy.planStep(conceptType: ConceptType.definition,
       note: note,
       noteAttempts: [],
       noteErrors: [],

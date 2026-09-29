@@ -121,4 +121,33 @@ void main() {
     expect(box.get(1), 'not a note'); // untouched
   });
 
+  test('migration v6 to v7 backfills linkIds', () async {
+    final notesBox = await Hive.openBox('notes');
+    final note = HiveNote()
+      ..id = 1
+      ..title = 'Test Note'
+      ..body = 'Body'
+      ..kind = '0'
+      ..createdAt = DateTime.now().toIso8601String()
+      ..updatedAt = DateTime.now().toIso8601String()
+      ..linkIds = [];
+    await notesBox.put(1, note);
+
+    final linksBox = await Hive.openBox('links');
+    final link = HiveLink()
+      ..id = 1
+      ..fromNoteId = 1
+      ..toNoteId = 2
+      ..createdAt = DateTime.now().toIso8601String();
+    await linksBox.put(1, link);
+
+    final metaBox = await Hive.openBox('meta');
+    await metaBox.put('schema_version', 6);
+    await metaBox.delete('backfilled_linkids');
+
+    await AppDatabase.ensureInitializedForTesting(tempDir.path);
+
+    final updatedNote = notesBox.get(1) as HiveNote;
+    expect(updatedNote.linkIds, contains(2));
+  });
 }

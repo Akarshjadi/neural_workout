@@ -46,4 +46,12 @@ void main() {
       expect(easyScore.index, greaterThan(againScore.index));
     });
   });
+
+  test('scoreToRating(NaN) maps to again, never easy', () {
+    expect(AppState.scoreToRating(double.nan), Rating.again);
+  });
+
+  test('scoreToRating(NaN) maps to again, never easy', () {
+    expect(AppState.scoreToRating(double.nan), Rating.again);
+  });
 }
