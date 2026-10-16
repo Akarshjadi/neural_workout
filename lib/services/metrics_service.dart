@@ -109,8 +109,7 @@ class MetricsService {
         .where((a) =>
             a.interventionId != null &&
             (interventionIds.isEmpty || interventionIds.contains(a.interventionId)) &&
-            a.isDelayed &&
-            !a.scorePct.isNaN)
+                        !a.scorePct.isNaN)
         .toList();
     if (valid.isEmpty) return 0.0;
     return valid.fold<double>(0.0, (acc, a) => acc + a.scorePct) / valid.length;

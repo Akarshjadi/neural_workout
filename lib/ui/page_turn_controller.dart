@@ -70,7 +70,7 @@ class _NotebookShellState extends State<NotebookShell> {
           SafeArea(
             child: GestureDetector(
               onHorizontalDragEnd: (details) {
-                if (details.primaryVelocity! > 300) _prevPage();
+                if ((details.primaryVelocity ?? 0) > 300) _prevPage();
               },
               child: PageView.builder(
                 controller: _pageController,

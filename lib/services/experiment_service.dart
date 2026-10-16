@@ -164,14 +164,14 @@ class ExperimentService {
     final scores = <String, List<double>>{};
     final actionById = {for (final i in interventions) i.id: i.action};
     for (final a in attempts) {
-      if (a.interventionId != null &&
-          a.knowledgeTargetId != null &&
-          !a.scorePct.isNaN &&
-          a.isDelayed) {
-        final cType = conceptTypeByNote[a.knowledgeTargetId!];
-        final action = actionById[a.interventionId];
-        if (cType != null && action != null) {
-          scores.putIfAbsent('${action.index}_${cType.index}', () => []).add(a.scorePct);
+      if (a.interventionId != null && a.knowledgeTargetId != null) {
+        final outs = delayedOutcomes.where((o) => o.attemptId == a.id && !o.scorePct.isNaN);
+        for (final o in outs) {
+          final cType = conceptTypeByNote[a.knowledgeTargetId!];
+          final action = actionById[a.interventionId];
+          if (cType != null && action != null) {
+            scores.putIfAbsent('${action.index}_${cType.index}', () => []).add(o.scorePct);
+          }
         }
       }
     }

@@ -210,7 +210,8 @@ class PlasticityService {
     double accScore = 0;
     if (recentBlurts.isNotEmpty) {
       final double avgAcc = recentBlurts.map((b) => b.scorePct).reduce((a, b) => a + b) / recentBlurts.length;
-      accScore = (100 - ((avgAcc - 0.775).abs() * (100 / 0.225))).clamp(0.0, 100.0);
+      final double normAcc = (avgAcc <= 1.0 && avgAcc > 0.0) ? avgAcc * 100.0 : avgAcc;
+    accScore = (100 - ((normAcc - 77.5).abs() * (100 / 22.5))).clamp(0.0, 100.0);
     }
     double ratingScore = 0, interleaveScore = 0;
     if (recentReviews.isNotEmpty) {
@@ -232,9 +233,10 @@ class PlasticityService {
     String detail = 'balanced';
     final double avgAcc = recentBlurts.isNotEmpty ? recentBlurts.map((b) => b.scorePct).reduce((a, b) => a + b) / recentBlurts.length : 0;
     if (recentBlurts.isNotEmpty) {
-      if (avgAcc > 0.90) {
+      final double normAcc = (avgAcc <= 1.0 && avgAcc > 0.0) ? avgAcc * 100.0 : avgAcc;
+    if (normAcc > 90.0) {
         detail = 'too easy';
-      } else if (avgAcc < 0.60) {
+      } else if (normAcc < 60.0) {
         detail = 'too hard';
       }
     } else if (recentReviews.isNotEmpty) {

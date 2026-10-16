@@ -2,8 +2,6 @@ import 'package:neural_workout/models/error_record.dart';
 import 'package:neural_workout/models/note.dart';
 import 'package:neural_workout/models/workout_session.dart';
 import 'package:neural_workout/data/app_database.dart';
-import 'package:fsrs/fsrs.dart' as fsrs;
-import 'learning_enums.dart';
 
 abstract class SuggestionStateProvider {
   List<ErrorRecord> get errorRecords;

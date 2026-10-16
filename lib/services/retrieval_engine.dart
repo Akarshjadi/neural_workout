@@ -156,7 +156,8 @@ class RetrievalEngine {
 
     int matched = 0;
     for (final point in expectedKeyPoints) {
-      final terms = point.toLowerCase().split(RegExp(r'\s+')).where((t) => t.length > 3);
+      var terms = point.toLowerCase().split(RegExp(r'\s+')).where((t) => t.length > 3);
+      if (terms.isEmpty) terms = point.toLowerCase().split(RegExp(r'\s+')).where((t) => t.isNotEmpty);
       if (terms.isEmpty) continue;
       final termMatches = terms.where((t) => cleanResp.contains(t)).length;
       if (termMatches / terms.length >= 0.5) {

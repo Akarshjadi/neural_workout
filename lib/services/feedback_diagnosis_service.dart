@@ -63,7 +63,8 @@ class FeedbackDiagnosisService {
     final incorrect = <String>[];
 
     for (final point in expectedPoints) {
-      final terms = point.toLowerCase().split(RegExp(r'\s+')).where((t) => t.length > 3);
+      var terms = point.toLowerCase().split(RegExp(r'\s+')).where((t) => t.length > 3);
+      if (terms.isEmpty) terms = point.toLowerCase().split(RegExp(r'\s+')).where((t) => t.isNotEmpty);
       if (terms.isEmpty) continue;
       final termMatches = terms.where((t) => cleanResp.contains(t)).length;
       if (termMatches / terms.length >= 0.5) {
@@ -301,7 +302,7 @@ class FeedbackDiagnosisService {
         final second = list[i - 1];
         final third = list[i];
 
-        if (first.confidence == null || third.confidence == null) continue;
+            if (first.confidence == null || second.confidence == null || third.confidence == null) continue;
         final hadIt = !first.correctness.isFail;
         final confidenceCrash = (first.confidence ?? 0) -
                 (third.confidence ?? 0) >=

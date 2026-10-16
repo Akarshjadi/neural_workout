@@ -164,6 +164,6 @@ class SessionPolicyEngine {
     if (sessionElapsed.inMinutes >= 25) {
       return sessionElapsed + const Duration(minutes: 5);
     }
-    return const Duration(minutes: 5);
+    return const Duration(minutes: 25);
   }
 }

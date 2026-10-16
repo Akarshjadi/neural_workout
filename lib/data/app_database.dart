@@ -295,6 +295,7 @@ class AppDatabase {
   }
 
   static Future<void> _initBoxesAndMigrations() async {
+    _idCounters.clear();
     _ensureAdapters();
     await Hive.openBox(_nb);
     await Hive.openBox(_sb);
@@ -363,7 +364,8 @@ class AppDatabase {
           }
         }
       }
-      for (final raw in notesBox.values) {
+      for (final key in notesBox.keys.toList()) {
+        final raw = notesBox.get(key);
         if (raw is HiveNote && raw.id != null) {
           final noteId = raw.id!;
           final linked = linksByNote[noteId];
@@ -420,12 +422,7 @@ class AppDatabase {
   /// Idempotent via `meta` markers written by the caller. Legacy rows are the
   /// *origin* of all this evidence, so nothing is reinterpreted: a blurt stays
   /// a free recall, an FSRS review stays a cued recall with its rating grade.
-  static int _safeNextId(String b) {
-    final m = Hive.box('meta');
-    final c = m.get('seq_$b', defaultValue: 0) as int;
-    m.put('seq_$b', c + 1);
-    return c + 1;
-  }
+  static int _safeNextId(String b) => _nextId(b);
 
   static int _backfillAttemptsFromBlurts() {
     final src = Hive.box(_bb);
@@ -553,11 +550,17 @@ class AppDatabase {
     }
   }
 
-  int _nextId(String b) {
+  /// In-memory monotonic sequence counters to prevent concurrent ID collisions.
+  /// ponytail: in-memory counter seeded from Hive at runtime; upgrade path is per-box lock if multi-process access is needed.
+  static final Map<String, int> _idCounters = {};
+
+  static int _nextId(String b) {
     final m = Hive.box(_mb);
-    final c = m.get('seq_$b', defaultValue: 0) as int;
-    m.put('seq_$b', c + 1);
-    return c + 1;
+    var current = _idCounters[b] ??= m.get('seq_$b', defaultValue: 0) as int;
+    current += 1;
+    _idCounters[b] = current;
+    m.put('seq_$b', current);
+    return current;
   }
 
   Box get _n => Hive.box(_nb);
@@ -793,7 +796,10 @@ class AppDatabase {
     return v is HiveSetting ? v.value : null;
   }
   void setSetting(String k, String v) => _st.put(k, HiveSetting()..key = k..value = v);
-  Future<void> close() async => Hive.close();
+  Future<void> close() async {
+    _idCounters.clear();
+    await Hive.close();
+  }
 
   // ── Thoughts (Phase 3) ───────────────────────────────────
   List<Thought> allThoughts({bool includeDeleted = false}) {
@@ -1407,7 +1413,7 @@ class AppDatabase {
   // ── Focus integrity ─────────────────────────────────────────────────────
   Future<void> upsertFocus(FocusIntegrity f) async {
     if (!Hive.isBoxOpen(_fob)) return;
-    final key = f.sessionId ?? 0;
+    final key = f.sessionId ?? DateTime.now().millisecondsSinceEpoch;
     await _fo.put(key, HiveFocusIntegrity()
       ..sessionId = f.sessionId
       ..plannedDurationMs = f.plannedDuration?.inMilliseconds
@@ -1467,8 +1473,7 @@ class AppDatabase {
   KnowledgeEvidence summarizeKnowledgeEvidence(int noteId) {
     final attempts = attemptsForTarget(noteId);
     final delayed = delayedOutcomesForTarget(noteId);
-    final linkCounts = linkCountsByNote();
-    final dependents = linkCounts[noteId] ?? 0;
+    final dependents = allLinks.where((l) => l.toNoteId == noteId).length;
 
     int retAtt = 0, retSucc = 0;
     int delAtt = 0, delSucc = 0;

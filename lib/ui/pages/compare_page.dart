@@ -105,7 +105,7 @@ class _ComparePageState extends State<ComparePage> {
                       state.logErrorRecord(
                         conceptId: w.anchorNoteId?.toString() ?? 'c_${DateTime.now().millisecondsSinceEpoch}',
                         errorType: type,
-                        attemptId: '${w.attemptId ?? 0}',
+                        attemptId: '${w.attemptId ?? ''}',
                         userResponse: blurtText,
                         expectedResponse: matched.join(', '),
                       );
@@ -117,6 +117,14 @@ class _ComparePageState extends State<ComparePage> {
                 ),
             ],
           ),
+        const SizedBox(height: 24),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+             onPressed: () => context.read<AppState>().triggerPage(5),
+             child: const Text('Proceed to Spaced Retrieval'),
+          ),
+        ),
           const SizedBox(height: 48),
         ],
       ),

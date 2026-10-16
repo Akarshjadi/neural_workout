@@ -52,6 +52,7 @@ import '../services/session_policy_engine.dart';
 import '../models/evidence_profile_dimension.dart';
 
 class AppState extends ChangeNotifier implements SuggestionContext {
+  @override
   final AppDatabase db;
   final FsrsEngine fsrs = FsrsEngine();
   PathwayService pathways = PathwayService();
@@ -168,8 +169,11 @@ class AppState extends ChangeNotifier implements SuggestionContext {
     return _strategyProfileCache;
   }
 
+  @override
   List<LearningAttempt> get learningAttempts => db.allAttempts();
+  @override
   List<ErrorRecord> get errorRecords => db.allErrors();
+  @override
   List<DelayedOutcome> get delayedOutcomes => db.allDelayedOutcomes();
   ResearchCatalog get researchCatalog => ResearchCatalog();
 
@@ -196,8 +200,9 @@ class AppState extends ChangeNotifier implements SuggestionContext {
       attemptId: attId,
       type: errorType,
       source: DiagnosisSource.user,
-      evidence: 'User self-diagnosis: ${errorType.label}',
+      evidence: 'User self-diagnosis: ${errorType.label}\nUser response: $userResponse\nExpected: $expectedResponse',
       createdAt: DateTime.now(),
+      confusedConceptId: int.tryParse(conceptId),
     );
     await db.insertError(record);
     notifyListeners();
@@ -253,7 +258,7 @@ class AppState extends ChangeNotifier implements SuggestionContext {
     // 6. Error Recovery
     double recoveryVal = 0.6;
     if (errorRecords.isNotEmpty) {
-      recoveryVal = 0.75;
+      recoveryVal = (1.0 - (errorRecords.length * 0.05)).clamp(0.1, 1.0);
     }
 
     // 7. Efficiency
@@ -340,9 +345,13 @@ class AppState extends ChangeNotifier implements SuggestionContext {
   }
 
   // Loaded collections (refreshed on load / after mutations).
+  @override
   List<Note> notes = [];
+  @override
   List<Session> sessions = [];
+  @override
   List<BlurtScore> blurtScores = [];
+  @override
   List<PathwayRecord> pathwayRecords = [];
   List<Thought> thoughts = [];
 
@@ -603,7 +612,11 @@ class AppState extends ChangeNotifier implements SuggestionContext {
   // ── Workout session ────────────────────────────────────
   /// Starts a fresh wizard. The [WorkoutSessionState] is kept live and its JSON
   /// autosaved into the [Session] record so resume is lossless (issue #2/#3).
+  bool _isStartingSession = false;
   Future<void> startSession(String anchorTitle, {int? anchorNoteId}) async {
+    if (_isStartingSession) return;
+    _isStartingSession = true;
+    try {
     if (activeSession != null && activeSession!.stepsCompleted < 8) {
       await _autosave();
     }
@@ -643,7 +656,7 @@ class AppState extends ChangeNotifier implements SuggestionContext {
         if (sorted.isNotEmpty) contrastId = sorted.first.key;
 
         final step = sessionPolicy.planStep(
-          note: note, conceptType: db.conceptTypeFor(note.id ?? -1),
+          note: note, conceptType: db.conceptTypeFor(note.id),
           noteAttempts: attempts,
           noteErrors: errors,
           noteDelayedOutcomes: delayedOutcomes,
@@ -691,7 +704,9 @@ class AppState extends ChangeNotifier implements SuggestionContext {
       autosaveJson: w.toJson(),
     );
     await _reloadSessions();
-    notifyListeners();
+    notifyListeners();    } finally {
+      _isStartingSession = false;
+    }
   }
 
   /// Clears the transient "just completed" end state (called by the done
@@ -963,7 +978,7 @@ class AppState extends ChangeNotifier implements SuggestionContext {
         debugPrint(
           'Schedule: blurt never scored (cold start?) -- skipping schedule',
         );
-        return;
+        // return;
       }
       final rating = AppState.scoreToRating(w.scorePct);
       await reviewNote(anchor, rating);
@@ -974,6 +989,7 @@ class AppState extends ChangeNotifier implements SuggestionContext {
   /// <40 → again, 40–70 → hard, 70–90 → good, ≥90 → easy, null → good.
   static Rating scoreToRating(double? scorePct) {
     if (scorePct == null) return Rating.good;
+    if (scorePct.isNaN) return Rating.again;
     if (scorePct < 40) return Rating.again;
     if (scorePct < 70) return Rating.hard;
     if (scorePct < 90) return Rating.good;
@@ -1188,6 +1204,7 @@ class AppState extends ChangeNotifier implements SuggestionContext {
       contrastTargetId: contrastTargetId,
       empiricalMatches: empirical,
     );
+    // ponytail: append-only log allows audit trail; bounded by user sessions
     final id = await db.insertIntervention(intervention);
     notifyListeners();
     return id;
@@ -1255,6 +1272,8 @@ class AppState extends ChangeNotifier implements SuggestionContext {
 
 
   // ── Dashboard helpers ──────────────────────────────────
+  @override
+
   List<Note> get dueNotesList =>
       notes.where((n) => !n.card.due.isAfter(DateTime.now())).toList();
 

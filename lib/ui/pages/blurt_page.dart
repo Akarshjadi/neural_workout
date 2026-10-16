@@ -68,6 +68,7 @@ class _BlurtPageState extends State<BlurtPage> {
     );
 
     if (mounted) {
+      context.read<AppState>().triggerPage(4);
       setState(() => _isConverting = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Recall recorded. Turn page for contrast analysis.', style: TextStyle(fontFamily: 'monospace'))),

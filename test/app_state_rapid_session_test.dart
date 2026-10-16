@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:neural_workout/state/app_state.dart';
 import 'package:neural_workout/data/app_database.dart';
-import 'package:hive/hive.dart';
 import 'dart:io';
 
 void main() {

@@ -65,6 +65,7 @@ class _CheckinPageState extends State<CheckinPage> {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Context covariates logged.', style: TextStyle(fontFamily: 'monospace'))),
               );
+              context.read<AppState>().triggerPage(2);
             },
             child: Text(state.hasCheckinToday ? 'UPDATE CALIBRATION' : 'LOG CONTEXT CALIBRATION'),
           ),

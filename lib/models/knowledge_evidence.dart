@@ -72,7 +72,7 @@ class EvidenceSummary {
   });
 
   int get totalAttempts =>
-      retrievalAttempts + applicationAttempts + transferAttempts + explanationAttempts;
+      retrievalAttempts + applicationAttempts + transferAttempts + explanationAttempts + delayedAttempts;
 
   int get totalSuccesses =>
       retrievalSuccesses + applicationSuccesses + transferSuccesses;
@@ -96,7 +96,7 @@ class EvidenceSummary {
     if (retrievalSuccesses > 0) n++;
     if (applicationSuccesses > 0) n++;
     if (transferSuccesses > 0) n++;
-    if (explanationAttempts > 0 && retrievalSuccesses > 0) n++;
+    if (explanationAttempts > 0) n++;
     return n;
   }
 
